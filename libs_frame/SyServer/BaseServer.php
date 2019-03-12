@@ -65,8 +65,6 @@ abstract class BaseServer {
             fclose($tipFileObj);
         }
 
-        echo SY_LOG_PATH . PHP_EOL;
-
         //设置日志目录
         Log::setPath(SY_LOG_PATH);
     }
