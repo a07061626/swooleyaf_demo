@@ -42,6 +42,7 @@ class ValidatorPlugin extends Plugin_Abstract {
         if(!isset(self::$verifyList[$verifyKey])){
             self::$verifyList[$verifyKey] = BaseReflect::getValidatorAnnotations($controllerClass, $methodName);
         }
+
         foreach (self::$verifyList[$verifyKey] as $eVerify) {
             $data = SyRequest::getParams($eVerify->getField());
             $verifyRes = Validator::validator($data, $eVerify);
