@@ -42,6 +42,11 @@ abstract class BaseServer {
      * @var string
      */
     protected $_tipFile = '';
+    /**
+     * 请求ID
+     * @var string
+     */
+    protected static $_reqId = '';
 
     public function __construct(int $port){
         if(($port <= 1024) || ($port > 65535)){
@@ -86,6 +91,20 @@ abstract class BaseServer {
     }
 
     private function __clone(){
+    }
+
+    /**
+     * 创建请求ID
+     */
+    protected function createReqId() {
+        self::$_reqId = hash('md4', Tool::getNowTime() . Tool::createNonceStr(5));
+    }
+
+    /**
+     * @return string
+     */
+    public static function getReqId() : string {
+        return self::$_reqId;
     }
 
     abstract public function start();

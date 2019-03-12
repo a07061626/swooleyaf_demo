@@ -7,6 +7,7 @@
  */
 namespace Tool;
 
+use Constant\Server;
 use Traits\SimpleTrait;
 
 class Tool {
@@ -82,5 +83,39 @@ class Tool {
         } else {
             return $configs;
         }
+    }
+
+    /**
+     * 获取当前时间戳
+     * @return int
+     */
+    public static function getNowTime(){
+        return $_SERVER[Server::SERVER_DATA_KEY_TIMESTAMP] ?? time();
+    }
+
+    /**
+     * 把数组转移成json字符串
+     * @param array|object $arr
+     * @param int|string $options
+     * @return bool|string
+     */
+    public static function jsonEncode($arr, $options=JSON_OBJECT_AS_ARRAY){
+        if(is_array($arr) || is_object($arr)){
+            return json_encode($arr, $options);
+        }
+        return false;
+    }
+
+    /**
+     * 解析json
+     * @param string $json
+     * @param int|string $assoc
+     * @return bool|mixed
+     */
+    public static function jsonDecode($json, $assoc=JSON_OBJECT_AS_ARRAY){
+        if(is_string($json)){
+            return json_decode($json, $assoc);
+        }
+        return false;
     }
 }
