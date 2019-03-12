@@ -7,7 +7,11 @@
  */
 namespace Tool;
 
+use Traits\SimpleTrait;
+
 class Tool {
+    use SimpleTrait;
+
     /**
      * 获取命令行输入
      * @param string|int $key 键名
