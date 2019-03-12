@@ -5,6 +5,7 @@ swoole yaf搭建自定义分布式框架教程源码
 - libs_frame: 框架公共库目录
 - pidfile: 服务进程pid文件目录
 - tipfile: 服务进程启动状态文件目录
+- static: 静态文件目录 
 
 # 课程目录
 免费版网盘链接：https://pan.baidu.com/s/1N4n_aytCxHF4fzXBH-Cg1g 提取码：vjpt<br/>
