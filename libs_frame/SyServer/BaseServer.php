@@ -66,6 +66,8 @@ abstract class BaseServer {
     private function __clone(){
     }
 
+    abstract public function start();
+
     /**
      * 获取服务启动状态
      */
@@ -82,7 +84,26 @@ abstract class BaseServer {
         exit();
     }
 
-    abstract public function start();
+    /**
+     * 关闭服务
+     */
+    public function stop(){
+        if(is_file($this->_pidFile) && is_readable($this->_pidFile)){
+            $pid = (int)file_get_contents($this->_pidFile);
+        } else {
+            $pid = 0;
+        }
+
+        $msg = ' \e[1;31m \t[fail]';
+        if($pid > 0){
+            if(\swoole_process::kill($pid)){
+                $msg = ' \e[1;32m \t[success]';
+            }
+            file_put_contents($this->_pidFile, '');
+        }
+        system('echo -e "\e[1;36m stop ' . SY_MODULE . ': \e[0m' . $msg . ' \e[0m"');
+        exit();
+    }
 
     public function onClose(\swoole_server $server,int $fd,int $reactorId) {
     }
@@ -102,6 +123,7 @@ abstract class BaseServer {
     public function onStart(\swoole_server $server) {
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
 
+        file_put_contents($this->_pidFile, $server->master_pid);
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
     }
 }
