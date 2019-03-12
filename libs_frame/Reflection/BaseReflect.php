@@ -33,6 +33,7 @@ class BaseReflect {
      */
     public static function getControllerFilterAnnotations(string $className,string $methodName,string &$controllerType) : array {
         $annotations = [];
+        Log::log('xxx:2');
 
         try{
             $class = new \ReflectionClass($className);
@@ -76,6 +77,7 @@ class BaseReflect {
     public static function getValidatorAnnotations(string $className,string $methodName) : array {
         $resArr = [];
         $controllerType = '';
+        Log::log('xxx:1');
         $annotations = self::getControllerFilterAnnotations($className, $methodName, $controllerType);
         if (strlen($controllerType) > 0) {
             if (!empty($annotations)) {
@@ -133,6 +135,8 @@ class BaseReflect {
                 }
             }
         }
+
+        Log::log('xxx:' . print_r($resArr, true));
 
         return $resArr;
     }

@@ -9,7 +9,6 @@ namespace SyFrame\Plugins;
 
 use Constant\ErrorCode;
 use Exception\Validator\ValidatorException;
-use Log\Log;
 use Reflection\BaseReflect;
 use Request\SyRequest;
 use Validator\Validator;
@@ -40,7 +39,6 @@ class ValidatorPlugin extends Plugin_Abstract {
         $controllerClass = $request->getControllerName() . 'Controller';
         $methodName = $request->getActionName() . 'Action';
         $verifyKey = strtolower($controllerClass . '_' . $methodName);
-        Log::log('xxx:' . $verifyKey);
         if(!isset(self::$verifyList[$verifyKey])){
             self::$verifyList[$verifyKey] = BaseReflect::getValidatorAnnotations($controllerClass, $methodName);
         }
