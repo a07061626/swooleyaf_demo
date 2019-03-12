@@ -7,7 +7,7 @@ swoole yaf搭建自定义分布式框架教程源码
 - tipfile: 服务进程启动状态文件目录
 - static: 静态文件目录 
 
-# 课程目录
+# <a name="1">课程目录</a>
 免费版网盘链接：https://pan.baidu.com/s/1N4n_aytCxHF4fzXBH-Cg1g 提取码：vjpt<br/>
 **收费版请联系QQ:837483732(备注信息请注明购买swooleyaf框架教程)<br/>**
 
