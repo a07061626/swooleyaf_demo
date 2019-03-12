@@ -4,6 +4,9 @@ class IndexController extends CommonController {
         parent::init();
     }
 
+    /**
+     * @SyFilter-{"field": "tag","explain": "标识","type": "string","rules": {"min": 1,"required":1}}
+     */
     public function indexAction(){
         $this->SyResult->setData([
             'msg' => 'hello swoole',
