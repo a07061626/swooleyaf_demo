@@ -20,6 +20,11 @@ class HttpServer extends BaseServer {
 
     public function onMessage(\swoole_websocket_server $server,\swoole_websocket_frame $frame) {
         Log::log('fjalkfjkl');
+        try{
+            throw new \Exception('fdfas', 999);
+        }catch(\Exception $e){
+            Log::error($e->getMessage(), $e->getCode(), $e->getTraceAsString());
+        }
         $server->push($frame->fd, "this is websocket server");
     }
 
