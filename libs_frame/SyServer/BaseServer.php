@@ -49,7 +49,7 @@ abstract class BaseServer {
     public function onClose(\swoole_server $server,int $fd,int $reactorId) {
     }
 
-    public function onWorkStart(\swoole_server $server, $workerId) {
+    public function onWorkerStart(\swoole_server $server, $workerId) {
         if($workerId >= $server->setting['worker_num']){
             @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
         } else {

@@ -27,7 +27,7 @@ class HttpServer extends BaseServer {
         $this->_server->on('message', [$this, 'onMessage']);
         $this->_server->on('close', [$this, 'onClose']);
         $this->_server->on('start', [$this, 'onStart']);
-        $this->_server->on('workStart', [$this, 'onWorkStart']);
+        $this->_server->on('workerStart', [$this, 'onWorkerStart']);
         $this->_server->on('managerStart', [$this, 'onManagerStart']);
         $this->_server->start();
     }
