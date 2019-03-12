@@ -12,6 +12,8 @@ use Yaf\Request\Http;
 class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
+
+        define('SY_SERVER_TYPE', 'frontgate');
     }
 
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {

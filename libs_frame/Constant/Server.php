@@ -19,6 +19,14 @@ class Server {
     const PROCESS_TYPE_MAIN = 'Main'; //类型-main
 
     //服务常量
+    public static $totalServerType = [
+        self::SERVER_TYPE_API_GATE => 'api入口',
+        self::SERVER_TYPE_API_MODULE => 'api模块',
+        self::SERVER_TYPE_FRONT_GATE => '前端入口',
+    ];
+    const SERVER_TYPE_API_GATE = 'api'; //服务端类型-api入口
+    const SERVER_TYPE_API_MODULE = 'rpc'; //服务端类型-api模块
+    const SERVER_TYPE_FRONT_GATE = 'frontgate'; //服务端类型-前端入口
     const SERVER_DATA_KEY_TIMESTAMP = 'SYREQ_TIME'; //服务端内部数据键名-请求时间戳
 
     //路由常量
