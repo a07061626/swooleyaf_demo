@@ -7,20 +7,12 @@
  */
 namespace SyServer;
 
-use Log\Log;
-
 class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
     }
 
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
-        Log::log('fjalkfjkl');
-        try{
-            throw new \Exception('fdfas', 999);
-        }catch(\Exception $e){
-            Log::error($e->getMessage(), $e->getCode(), $e->getTraceAsString());
-        }
         $response->end("<h1>Hello Swoole Websocket Server. #" . random_int(1000, 9999) . "</h1>");
     }
 
