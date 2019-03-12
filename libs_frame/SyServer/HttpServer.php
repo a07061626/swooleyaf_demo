@@ -29,6 +29,8 @@ class HttpServer extends BaseServer {
         $this->_server->on('start', [$this, 'onStart']);
         $this->_server->on('workerStart', [$this, 'onWorkerStart']);
         $this->_server->on('managerStart', [$this, 'onManagerStart']);
+
+        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
         $this->_server->start();
     }
 }

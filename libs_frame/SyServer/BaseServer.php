@@ -30,6 +30,16 @@ abstract class BaseServer {
      * @var array
      */
     protected $_configs = [];
+    /**
+     * pid文件
+     * @var string
+     */
+    protected $_pidFile = '';
+    /**
+     * 提示文件
+     * @var string
+     */
+    protected $_tipFile = '';
 
     public function __construct(int $port){
         if(($port <= 1024) || ($port > 65535)){
@@ -39,9 +49,37 @@ abstract class BaseServer {
         $this->_configs['server']['port'] = $port;
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
+        $this->_pidFile = SY_ROOT . '/pidfile/' . SY_MODULE . $this->_port . '.pid';
+        $this->_tipFile = SY_ROOT . '/tipfile/' . SY_MODULE . $this->_port . '.txt';
+        if(is_dir($this->_tipFile)){
+            exit('提示文件不能是文件夹' . PHP_EOL);
+        } else if(!file_exists($this->_tipFile)){
+            $tipFileObj = fopen($this->_tipFile, 'wb');
+            if(is_bool($tipFileObj)){
+                exit('创建或打开提示文件失败' . PHP_EOL);
+            }
+            fwrite($tipFileObj, '');
+            fclose($tipFileObj);
+        }
     }
 
     private function __clone(){
+    }
+
+    /**
+     * 获取服务启动状态
+     */
+    public function getStartStatus(){
+        $fileContent = file_get_contents($this->_tipFile);
+        $command = 'echo -e "\e[1;31m ' . SY_MODULE . ' start status fail \e[0m"';
+        if(is_string($fileContent)){
+            if(strlen($fileContent) > 0){
+                $command = 'echo -e "' . $fileContent . '"';
+            }
+            file_put_contents($this->_tipFile, '');
+        }
+        system($command);
+        exit();
     }
 
     abstract public function start();
@@ -63,5 +101,7 @@ abstract class BaseServer {
 
     public function onStart(\swoole_server $server) {
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
+
+        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
     }
 }
