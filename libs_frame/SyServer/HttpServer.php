@@ -7,6 +7,8 @@
  */
 namespace SyServer;
 
+use Constant\Server;
+
 class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
@@ -22,6 +24,19 @@ class HttpServer extends BaseServer {
             $server->push($frame->fd, "this is websocket server");
         });
         $this->_server->on('close', function (\swoole_server $server,int $fd,int $reactorId) {
+        });
+        $this->_server->on('start', function (\swoole_server $server) {
+            @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
+        });
+        $this->_server->on('workStart', function (\swoole_server $server, $workerId) {
+            if($workerId >= $server->setting['worker_num']){
+                @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
+            } else {
+                @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
+            }
+        });
+        $this->_server->on('managerStart', function (\swoole_server $server) {
+            @cli_set_process_title(Server::PROCESS_TYPE_MANAGER . SY_MODULE . $this->_port);
         });
 
         $this->_server->start();
