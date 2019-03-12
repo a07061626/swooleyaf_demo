@@ -7,7 +7,6 @@
  */
 namespace SyServer;
 
-use Response\Result;
 use Yaf\Request\Http;
 
 class HttpServer extends BaseServer {
@@ -20,15 +19,7 @@ class HttpServer extends BaseServer {
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
         $this->createReqId();
         $httpObj = new Http($request->server['request_uri']);
-
-        try{
-            $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
-        }catch(\Exception $e){
-            $errObj = new Result();
-            $errObj->setCodeMsg($e->getCode(), $e->getMessage());
-            $result = $errObj->getJson();
-            unset($errObj);
-        }
+        $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
         $response->end($result);
     }
 
