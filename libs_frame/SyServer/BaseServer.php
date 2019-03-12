@@ -11,6 +11,7 @@ use Constant\Project;
 use Constant\Server;
 use Log\Log;
 use Tool\Tool;
+use Yaf\Application;
 
 abstract class BaseServer {
     /**
@@ -42,6 +43,10 @@ abstract class BaseServer {
      * @var string
      */
     protected $_tipFile = '';
+    /**
+     * @var \Yaf\Application
+     */
+    protected $_app = null;
     /**
      * 请求ID
      * @var string
@@ -155,6 +160,10 @@ abstract class BaseServer {
         } else {
             @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
         }
+
+        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
+        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
+        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
     }
 
     public function onManagerStart(\swoole_server $server) {

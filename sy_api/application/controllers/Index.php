@@ -6,7 +6,7 @@ class IndexController extends CommonController {
 
     public function indexAction(){
         $this->SyResult->setData([
-            'short_url' => \SyServer\HttpServer::getServerConfig('cookiedomain_base'),
+            'msg' => 'hello swoole',
         ]);
 
         $this->sendRsp();

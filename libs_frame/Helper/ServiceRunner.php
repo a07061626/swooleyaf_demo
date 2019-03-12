@@ -16,6 +16,17 @@ class ServiceRunner {
      * @param array $totalModule 包含所有模块的数组
      */
     public static function run(string $apiName,array $totalModule){
+        $projectName = trim(Tool::getClientOption('-n', false, ''));
+        if(strlen($projectName) == 0){
+            exit('参数 -n 服务项目名称无效,必须与项目目录相同,否则无法加载 profile文件' . PHP_EOL);
+        }
+
+        $projectPath = SY_ROOT . '/' . $projectName;
+        if(!is_dir($projectPath)){
+            exit($projectName . ' dir not exist' . PHP_EOL);
+        }
+        define('APP_PATH', $projectPath);
+
         $moduleName = trim(Tool::getClientOption('-module', false, ''));
         if (strlen($moduleName) == 0) {
             exit('module name must exist' . PHP_EOL);
