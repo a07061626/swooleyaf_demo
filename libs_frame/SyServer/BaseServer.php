@@ -7,6 +7,7 @@
  */
 namespace SyServer;
 
+use Constant\Server;
 use Tool\Tool;
 
 abstract class BaseServer {
@@ -44,4 +45,23 @@ abstract class BaseServer {
     }
 
     abstract public function start();
+
+    public function onClose(\swoole_server $server,int $fd,int $reactorId) {
+    }
+
+    public function onWorkStart(\swoole_server $server, $workerId) {
+        if($workerId >= $server->setting['worker_num']){
+            @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
+        } else {
+            @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
+        }
+    }
+
+    public function onManagerStart(\swoole_server $server) {
+        @cli_set_process_title(Server::PROCESS_TYPE_MANAGER . SY_MODULE . $this->_port);
+    }
+
+    public function onStart(\swoole_server $server) {
+        @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
+    }
 }
