@@ -17,8 +17,7 @@ class ServiceManager {
                 foreach ($projects as $eProject) {
                     foreach ($eProject['listens'] as $eListen) {
                         $command = $commandPrefix . ' -s start -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'] . ' && ' . $commandPrefix . ' -s startstatus -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
-                        echo $command . PHP_EOL;
-//                        system($command);
+                        system($command);
                     }
                 }
                 break;
