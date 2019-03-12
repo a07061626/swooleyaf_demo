@@ -8,6 +8,7 @@
 namespace SyServer;
 
 use Constant\Server;
+use Log\Log;
 use Tool\Tool;
 
 abstract class BaseServer {
@@ -47,6 +48,8 @@ abstract class BaseServer {
         }
         $this->_configs = Tool::getConfig('syserver.' . SY_ENV . SY_MODULE);
         $this->_configs['server']['port'] = $port;
+
+        define('SY_SERVER_IP', $this->_configs['server']['host']);
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
         $this->_pidFile = SY_ROOT . '/pidfile/' . SY_MODULE . $this->_port . '.pid';
@@ -61,6 +64,9 @@ abstract class BaseServer {
             fwrite($tipFileObj, '');
             fclose($tipFileObj);
         }
+
+        //设置日志目录
+        Log::setPath(SY_LOG_PATH);
     }
 
     private function __clone(){

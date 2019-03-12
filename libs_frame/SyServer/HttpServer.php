@@ -7,6 +7,8 @@
  */
 namespace SyServer;
 
+use Log\Log;
+
 class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
@@ -17,6 +19,7 @@ class HttpServer extends BaseServer {
     }
 
     public function onMessage(\swoole_websocket_server $server,\swoole_websocket_frame $frame) {
+        Log::log('fjalkfjkl');
         $server->push($frame->fd, "this is websocket server");
     }
 

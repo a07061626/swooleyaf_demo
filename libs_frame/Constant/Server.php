@@ -7,7 +7,11 @@
  */
 namespace Constant;
 
+use Traits\SimpleTrait;
+
 class Server {
+    use SimpleTrait;
+
     //进程常量
     const PROCESS_TYPE_TASK = 'Task'; //类型-task
     const PROCESS_TYPE_WORKER = 'Worker'; //类型-worker
