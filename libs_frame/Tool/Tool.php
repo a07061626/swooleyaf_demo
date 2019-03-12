@@ -13,6 +13,28 @@ use Traits\SimpleTrait;
 class Tool {
     use SimpleTrait;
 
+    private static $totalChars = [
+        '2', '3', '4', '5', '6', '7', '8', '9',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+        'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+        'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+        'Z',
+    ];
+    private static $lowerChars = [
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+        'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    ];
+    private static $numLowerChars = [
+        '2', '3', '4', '5', '6', '7', '8', '9',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+        'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    ];
+
     /**
      * 获取命令行输入
      * @param string|int $key 键名
@@ -117,5 +139,36 @@ class Tool {
             return json_decode($json, $assoc);
         }
         return false;
+    }
+
+    /**
+     * 生成随机字符串
+     * @param int $length 需要获取的随机字符串长度
+     * @param string $dataType 数据类型
+     *   total: 数字,大小写字母
+     *   lower: 小写字母
+     *   numlower: 数字,小写字母
+     * @return string
+     */
+    public static function createNonceStr(int $length,string $dataType='total') : string {
+        $resStr = '';
+        switch ($dataType) {
+            case 'lower':
+                for ($i = 0; $i < $length; $i++) {
+                    $resStr .= self::$lowerChars[random_int(0, 23)];
+                }
+                break;
+            case 'numlower':
+                for ($i = 0; $i < $length; $i++) {
+                    $resStr .= self::$numLowerChars[random_int(0, 31)];
+                }
+                break;
+            default:
+                for ($i = 0; $i < $length; $i++) {
+                    $resStr .= self::$totalChars[random_int(0, 56)];
+                }
+        }
+
+        return $resStr;
     }
 }

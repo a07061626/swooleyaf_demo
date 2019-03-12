@@ -7,13 +7,18 @@
  */
 namespace SyServer;
 
+use Yaf\Request\Http;
+
 class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
     }
 
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
-        $response->end("<h1>Hello Swoole Websocket Server. #" . random_int(1000, 9999) . "</h1>");
+        $this->createReqId();
+        $httpObj = new Http($request->server['request_uri']);
+        $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
+        $response->end($result);
     }
 
     public function onMessage(\swoole_websocket_server $server,\swoole_websocket_frame $frame) {
