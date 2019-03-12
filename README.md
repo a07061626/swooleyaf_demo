@@ -9,7 +9,8 @@ swoole yaf搭建自定义分布式框架教程源码
 
 # <a name="1">课程目录</a>
 免费版网盘链接：https://pan.baidu.com/s/1N4n_aytCxHF4fzXBH-Cg1g 提取码：vjpt<br/>
-**收费版请联系QQ:837483732(备注信息请注明购买swooleyaf框架教程)<br/>**
+**收费版请联系QQ:837483732或QQ群:163824514<br/>**
+[![QQ群](static/qqqun.jpg)](QQ群)
 
 |集数|名称|状态|
 | :---: | :--- | :---: |
