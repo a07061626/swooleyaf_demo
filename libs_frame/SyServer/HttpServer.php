@@ -363,15 +363,13 @@ class HttpServer extends BaseServer {
     public function start(){
         $this->initTableHttp();
         $this->_server = new \swoole_websocket_server($this->_host, $this->_port);
-        $this->_server->set($this->_configs['swoole']);
-        $this->_server->on('request', [$this, 'onRequest']);
-        $this->_server->on('message', [$this, 'onMessage']);
-        $this->_server->on('close', [$this, 'onClose']);
-        $this->_server->on('start', [$this, 'onStart']);
-        $this->_server->on('workerStart', [$this, 'onWorkerStart']);
-        $this->_server->on('managerStart', [$this, 'onManagerStart']);
-
-        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
-        $this->_server->start();
+        $this->baseStart([
+            'request' => 'onRequest',
+            'message' => 'onMessage',
+            'close' => 'onClose',
+            'start' => 'onStart',
+            'workerStart' => 'onWorkerStart',
+            'managerStart' => 'onManagerStart',
+        ]);
     }
 }

@@ -75,6 +75,7 @@ abstract class BaseServer {
         if(($port <= 1024) || ($port > 65535)){
             exit('端口不合法' . PHP_EOL);
         }
+        $this->checkSystemEnv();
         $this->_configs = Tool::getConfig('syserver.' . SY_ENV . SY_MODULE);
         $this->_configs['server']['port'] = $port;
         //关闭协程
@@ -120,6 +121,62 @@ abstract class BaseServer {
     private function __clone(){
     }
 
+    private function checkSystemEnv() {
+        if(PHP_INT_SIZE < 8){
+            exit('操作系统必须是64位' . PHP_EOL);
+        }
+        if(version_compare(PHP_VERSION, Server::VERSION_MIN_PHP, '<')){
+            exit('PHP版本必须大于等于' . Server::VERSION_MIN_PHP . PHP_EOL);
+        }
+        if (!defined('SY_MODULE')) {
+            exit('模块名称未定义' . PHP_EOL);
+        }
+        if (!defined('SY_TOKEN')) {
+            exit('令牌未定义' . PHP_EOL);
+        }
+        if (!ctype_alnum(SY_TOKEN)) {
+            exit('令牌不合法' . PHP_EOL);
+        }
+        if (strlen(SY_TOKEN) != 8) {
+            exit('令牌不合法' . PHP_EOL);
+        }
+        if(!in_array(SY_ENV, Server::$totalEnvProject)){
+            exit('环境类型不合法' . PHP_EOL);
+        }
+
+        $os = php_uname('s');
+        if(!in_array($os, Server::$totalEnvSystem)){
+            exit('操作系统不支持' . PHP_EOL);
+        }
+
+        //检查必要的扩展是否存在
+        $extensionList = [
+            'yaf',
+            'PDO',
+            'pcre',
+            'pcntl',
+            'redis',
+            'yaconf',
+            'swoole',
+            'SeasLog',
+        ];
+        foreach ($extensionList as $extName) {
+            if(!extension_loaded($extName)){
+                exit('扩展' . $extName . '未加载' . PHP_EOL);
+            }
+        }
+
+        if(version_compare(SWOOLE_VERSION, Server::VERSION_MIN_SWOOLE, '<')){
+            exit('swoole版本必须大于等于' . Server::VERSION_MIN_SWOOLE . PHP_EOL);
+        }
+        if(version_compare(SEASLOG_VERSION, Server::VERSION_MIN_SEASLOG, '<')){
+            exit('seaslog版本必须大于等于' . Server::VERSION_MIN_SEASLOG . PHP_EOL);
+        }
+        if(version_compare(\YAF\VERSION, Server::VERSION_MIN_YAF, '<')){
+            exit('yaf版本必须大于等于' . Server::VERSION_MIN_YAF . PHP_EOL);
+        }
+    }
+
     /**
      * 创建请求ID
      */
@@ -154,6 +211,22 @@ abstract class BaseServer {
         }
 
         return $checkRes;
+    }
+
+    /**
+     * 基础启动服务
+     * @param array $registerMap
+     */
+    protected function baseStart(array $registerMap) {
+        $this->_server->set($this->_configs['swoole']);
+        //绑定注册方法
+        foreach ($registerMap as $eventName => $funcName) {
+            $this->_server->on($eventName, [$this, $funcName]);
+        }
+
+        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
+        //启动服务
+        $this->_server->start();
     }
 
     abstract public function start();
