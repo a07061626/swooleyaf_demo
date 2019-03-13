@@ -360,31 +360,6 @@ class HttpServer extends BaseServer {
         $server->push($frame->fd, "this is websocket server");
     }
 
-    public function onTask(\swoole_server $server, int $taskId, int $fromId, string $data){
-        $baseRes = $this->handleTaskBase($server, $taskId, $fromId, $data);
-        if(is_array($baseRes)){
-            $taskCommand = Tool::getArrayVal($baseRes['params'], 'task_command', '');
-            switch ($taskCommand) {
-                case Project::TASK_TYPE_CLEAR_API_SIGN_CACHE:
-                    $this->clearApiSign();
-                    break;
-                default:
-                    $traitRes = $this->handleTaskHttpTrait($server, $taskId, $fromId, $baseRes);
-                    if(strlen($traitRes) > 0){
-                        return $traitRes;
-                    }
-            }
-
-            $result = new Result();
-            $result->setData([
-                'result' => 'success',
-            ]);
-            return $result->getJson();
-        } else {
-            return $baseRes;
-        }
-    }
-
     public function start(){
         $this->initTableHttp();
         $this->_server = new \swoole_websocket_server($this->_host, $this->_port);

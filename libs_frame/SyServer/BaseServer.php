@@ -510,13 +510,4 @@ abstract class BaseServer {
      * @param int $exitCode 退出状态码
      */
     abstract public function onWorkerError(\swoole_server $server, $workId, $workPid, $exitCode);
-    /**
-     * 处理任务
-     * @param \swoole_server $server
-     * @param int $taskId
-     * @param int $fromId
-     * @param string $data
-     * @return string
-     */
-    abstract public function onTask(\swoole_server $server,int $taskId,int $fromId,string $data);
 }
