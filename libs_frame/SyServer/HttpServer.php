@@ -428,6 +428,7 @@ class HttpServer extends BaseServer {
             'start' => 'onStart',
             'workerStart' => 'onWorkerStart',
             'managerStart' => 'onManagerStart',
+            'task' => 'onTask',
         ]);
     }
 }

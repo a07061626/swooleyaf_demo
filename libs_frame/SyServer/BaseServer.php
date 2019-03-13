@@ -109,6 +109,12 @@ abstract class BaseServer {
         $this->_configs['swoole']['package_max_length'] = Project::SIZE_SERVER_PACKAGE_MAX;
         $this->_configs['swoole']['socket_buffer_size'] = Project::SIZE_CLIENT_SOCKET_BUFFER;
         $this->_configs['swoole']['buffer_output_size'] = Project::SIZE_CLIENT_BUFFER_OUTPUT;
+        $taskNum = isset($this->_configs['swoole']['task_worker_num']) ? (int)$this->_configs['swoole']['task_worker_num'] : 0;
+        if($taskNum < 2){
+            exit('Task进程的数量必须大于等于2' . PHP_EOL);
+        }
+        $this->_taskNum = $taskNum;
+        $this->_taskMaxId = $taskNum - 1;
 
         define('SY_SERVER_IP', $this->_configs['server']['host']);
         define('SY_REQUEST_MAX_HANDLING', (int)$this->_configs['server']['request']['maxnum']['handling']);
