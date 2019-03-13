@@ -9,6 +9,7 @@ namespace SyFrame\Plugins;
 
 use Constant\ErrorCode;
 use Exception\Validator\ValidatorException;
+use Log\Log;
 use Reflection\BaseReflect;
 use Request\SyRequest;
 use Validator\Validator;
@@ -50,5 +51,7 @@ class ValidatorPlugin extends Plugin_Abstract {
                 throw new ValidatorException($verifyRes, ErrorCode::COMMON_PARAM_ERROR);
             }
         }
+
+        Log::log('xxx2');
     }
 }

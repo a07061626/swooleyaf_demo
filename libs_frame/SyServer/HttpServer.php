@@ -119,7 +119,6 @@ class HttpServer extends BaseServer {
         $rspHeaders = [];
         $this->initRequest($request, $rspHeaders);
         $httpObj = new Http($uri);
-        Log::log('xxx1');
 
         try{
             $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
