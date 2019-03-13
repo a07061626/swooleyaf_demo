@@ -413,10 +413,8 @@ abstract class BaseServer {
             $taskCommand = Tool::getArrayVal($commandData, 'task_command', '');
             switch ($taskCommand) {
                 case Project::TASK_TYPE_CLEAR_LOCAL_USER_CACHE:
-                    $this->clearLocalUsers();
                     break;
                 case Project::TASK_TYPE_CLEAR_LOCAL_WX_CACHE:
-                    $this->clearWxCache();
                     break;
                 default:
                     $taskData = [

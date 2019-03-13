@@ -366,7 +366,6 @@ class HttpServer extends BaseServer {
             $taskCommand = Tool::getArrayVal($baseRes['params'], 'task_command', '');
             switch ($taskCommand) {
                 case Project::TASK_TYPE_CLEAR_API_SIGN_CACHE:
-                    $this->clearApiSign();
                     break;
                 default:
                     $traitRes = $this->handleTaskHttpTrait($server, $taskId, $fromId, $baseRes);
