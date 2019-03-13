@@ -9,6 +9,7 @@ namespace SyServer;
 
 use Constant\ErrorCode;
 use Constant\Server;
+use Log\Log;
 use Request\RequestSign;
 use Response\Result;
 use Tool\Tool;
@@ -118,6 +119,7 @@ class HttpServer extends BaseServer {
         $rspHeaders = [];
         $this->initRequest($request, $rspHeaders);
         $httpObj = new Http($uri);
+        Log::log('xxx1');
 
         try{
             $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
