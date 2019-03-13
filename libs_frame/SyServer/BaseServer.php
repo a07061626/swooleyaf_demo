@@ -177,15 +177,27 @@ abstract class BaseServer {
     }
 
     public function onWorkerStart(\swoole_server $server, $workerId) {
+        //设置错误和异常处理
+        set_exception_handler('\SyError\ErrorHandler::handleException');
+        set_error_handler('\SyError\ErrorHandler::handleError');
+        //设置时区
+        date_default_timezone_set('PRC');
+        //禁止引用外部xml实体
+        libxml_disable_entity_loader(true);
+        //设置bc数学函数小数点保留位数
+        $bcConfigs = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.bcmath');
+        bcscale($bcConfigs['scale']);
+
+        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
+        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
+        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
+
         if($workerId >= $server->setting['worker_num']){
             @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
         } else {
             @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
         }
 
-        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
-        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
-        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
     }
 
     public function onManagerStart(\swoole_server $server) {
