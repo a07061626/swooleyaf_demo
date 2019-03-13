@@ -544,6 +544,13 @@ abstract class BaseServer {
     }
 
     /**
+     * 关闭服务
+     * @param \swoole_server $server
+     */
+    public function onShutdown(\swoole_server $server){
+    }
+
+    /**
      * 启动工作进程
      * @param \swoole_server $server
      * @param int $workerId 进程编号
