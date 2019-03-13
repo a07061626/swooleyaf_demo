@@ -55,7 +55,13 @@ class HttpServer extends BaseServer {
     public function __construct(int $port){
         parent::__construct($port);
 
-        define('SY_SERVER_TYPE', 'frontgate');
+//        $projectLength = strlen(SY_PROJECT);
+//        $serverType = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules.' . substr(SY_MODULE, $projectLength) . '.type');
+        $serverType = 'frontgate';
+        if(!in_array($serverType, [Server::SERVER_TYPE_API_GATE, Server::SERVER_TYPE_FRONT_GATE])){
+            exit('服务端类型不支持' . PHP_EOL);
+        }
+        define('SY_SERVER_TYPE', $serverType);
     }
 
     /**
@@ -103,6 +109,18 @@ class HttpServer extends BaseServer {
         Registry::set(Server::REGISTRY_NAME_REQUEST_SERVER, self::$_reqServers);
         Registry::set(Server::REGISTRY_NAME_RESPONSE_HEADER, $rspHeaders);
         Registry::set(Server::REGISTRY_NAME_RESPONSE_COOKIE, []);
+    }
+
+    public function onWorkerStart(\swoole_server $server, $workerId){
+        $this->basicWorkStart($server, $workerId);
+    }
+
+    public function onWorkerStop(\swoole_server $server, int $workerId){
+        $this->basicWorkStop($server, $workerId);
+    }
+
+    public function onWorkerError(\swoole_server $server, $workId, $workPid, $exitCode){
+        $this->basicWorkError($server, $workId, $workPid, $exitCode);
     }
 
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {

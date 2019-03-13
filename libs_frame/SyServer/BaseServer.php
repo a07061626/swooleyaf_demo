@@ -10,6 +10,7 @@ namespace SyServer;
 use Constant\Project;
 use Constant\Server;
 use Log\Log;
+use Tool\Dir;
 use Tool\Tool;
 use Traits\BaseServerTrait;
 use Traits\Server\BasicBaseTrait;
@@ -186,10 +187,18 @@ abstract class BaseServer {
         exit();
     }
 
-    public function onClose(\swoole_server $server,int $fd,int $reactorId) {
+    /**
+     * 帮助信息
+     */
+    public function help(){
+        print_r('帮助信息' . PHP_EOL);
+        print_r('-s 操作类型: restart-重启 stop-关闭 start-启动 startstatus-启动状态' . PHP_EOL);
+        print_r('-n 项目名' . PHP_EOL);
+        print_r('-module 模块名' . PHP_EOL);
+        print_r('-port 端口,取值范围为1001-65535' . PHP_EOL);
     }
 
-    public function onWorkerStart(\swoole_server $server, $workerId) {
+    protected function basicWorkStart(\swoole_server $server, $workerId){
         //设置错误和异常处理
         set_exception_handler('\SyError\ErrorHandler::handleException');
         set_error_handler('\SyError\ErrorHandler::handleError');
@@ -210,7 +219,23 @@ abstract class BaseServer {
         } else {
             @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
         }
+    }
 
+    protected function basicWorkStop(\swoole_server $server,int $workId) {
+        $errCode = $server->getLastError();
+        if($errCode > 0){
+            Log::error('swoole work stop,workId=' . $workId . ',errorCode=' . $errCode . ',errorMsg=' . print_r(error_get_last(), true));
+        }
+    }
+
+    protected function basicWorkError(\swoole_server $server, $workId, $workPid, $exitCode){
+        if($exitCode > 0){
+            $msg = 'swoole work error. work_id=' . $workId . '|work_pid=' . $workPid . '|exit_code=' . $exitCode . '|err_msg=' . $server->getLastError();
+            Log::error($msg);
+        }
+    }
+
+    public function onClose(\swoole_server $server,int $fd,int $reactorId) {
     }
 
     public function onManagerStart(\swoole_server $server) {
@@ -220,21 +245,55 @@ abstract class BaseServer {
     public function onStart(\swoole_server $server) {
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
 
-        file_put_contents($this->_pidFile, $server->master_pid);
+        Dir::create(SY_ROOT . '/pidfile/');
+        if (file_put_contents($this->_pidFile, $server->master_pid) === false) {
+            Log::error('write ' . SY_MODULE . ' pid file error');
+        }
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
 
+        $config = Tool::getConfig('project.' . SY_ENV . SY_PROJECT);
+        Dir::create($config['dir']['store']['image']);
+        Dir::create($config['dir']['store']['music']);
+        Dir::create($config['dir']['store']['resources']);
+        Dir::create($config['dir']['store']['cache']);
+
+        //为了防止定时任务出现重启服务的时候,导致重启期间(1-3s内)的定时任务无法处理,将定时器时间初始化为当前时间戳之前6秒
+        $timerAdvanceTime = (int)Tool::getArrayVal($config, 'timer.time.advance', 6, true);
+        $initTimerTime = time() - $timerAdvanceTime;
         self::$_syServer->set(self::$_serverToken, [
             'memory_usage' => memory_get_usage(),
-            'timer_time' => 0,
+            'timer_time' => $initTimerTime,
             'request_times' => 0,
             'request_handling' => 0,
             'host_local' => $this->_host,
-            'storepath_image' => '/',
-            'storepath_music' => '/',
-            'storepath_resources' => '/',
-            'storepath_cache' => '/',
+            'storepath_image' => $config['dir']['store']['image'],
+            'storepath_music' => $config['dir']['store']['music'],
+            'storepath_resources' => $config['dir']['store']['resources'],
+            'storepath_cache' => $config['dir']['store']['cache'],
             'token_etime' => time() + 7200,
             'unique_num' => 100000000,
         ]);
     }
+
+    /**
+     * 启动工作进程
+     * @param \swoole_server $server
+     * @param int $workerId 进程编号
+     */
+    abstract public function onWorkerStart(\swoole_server $server, $workerId);
+    /**
+     * 退出工作进程
+     * @param \swoole_server $server
+     * @param int $workerId
+     * @return mixed
+     */
+    abstract public function onWorkerStop(\swoole_server $server, int $workerId);
+    /**
+     * 工作进程错误处理
+     * @param \swoole_server $server
+     * @param int $workId 进程编号
+     * @param int $workPid 进程ID
+     * @param int $exitCode 退出状态码
+     */
+    abstract public function onWorkerError(\swoole_server $server, $workId, $workPid, $exitCode);
 }
