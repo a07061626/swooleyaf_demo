@@ -28,6 +28,7 @@ class Server {
     const SERVER_TYPE_API_MODULE = 'rpc'; //服务端类型-api模块
     const SERVER_TYPE_FRONT_GATE = 'frontgate'; //服务端类型-前端入口
     const SERVER_DATA_KEY_TIMESTAMP = 'SYREQ_TIME'; //服务端内部数据键名-请求时间戳
+    const SERVER_DATA_KEY_TASK = '_sytask'; //服务端内部数据键名-task
 
     //路由常量
     const ROUTE_TYPE_SIMPLE = 'simple'; //类型-简单路由

@@ -7,19 +7,93 @@
  */
 namespace SyServer;
 
+use Constant\ErrorCode;
+use Constant\Server;
 use Response\Result;
+use Tool\Tool;
+use Yaf\Registry;
 use Yaf\Request\Http;
 
 class HttpServer extends BaseServer {
+    /**
+     * HTTP响应
+     * @var \swoole_http_response
+     */
+    private static $_response = null;
+    /**
+     * 响应消息
+     * @var string
+     */
+    private static $_rspMsg = '';
+    /**
+     * swoole请求头信息数组
+     * @var array
+     */
+    private static $_reqHeaders = [];
+    /**
+     * swoole服务器信息数组
+     * @var array
+     */
+    private static $_reqServers = [];
+    /**
+     * swoole task请求数据
+     * @var string
+     */
+    private static $_reqTask = null;
+
     public function __construct(int $port){
         parent::__construct($port);
 
         define('SY_SERVER_TYPE', 'frontgate');
     }
 
-    public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
+    /**
+     * 初始化公共数据
+     * @param \swoole_http_request $request
+     */
+    private function initReceive(\swoole_http_request $request) {
+        Registry::del(Server::REGISTRY_NAME_SERVICE_ERROR);
+        $_POST = $request->post ?? [];
+        $_SESSION = [];
+        self::$_reqHeaders = $request->header ?? [];
+        self::$_reqServers = $request->server ?? [];
+        self::$_rspMsg = '';
         $this->createReqId();
-        $httpObj = new Http($request->server['request_uri']);
+
+        $taskData = $_POST[Server::SERVER_DATA_KEY_TASK] ?? '';
+        self::$_reqTask = is_string($taskData) && (strlen($taskData) > 0) ? $taskData : null;
+
+        $_SERVER = [];
+        foreach (self::$_reqServers as $key => $val) {
+            $_SERVER[strtoupper($key)] = $val;
+        }
+        foreach (self::$_reqHeaders as $key => $val) {
+            $_SERVER[strtoupper($key)] = $val;
+        }
+        if(!isset($_SERVER['HTTP_HOST'])){
+            $_SERVER['HTTP_HOST'] = $this->_host . ':' . $this->_port;
+        }
+        if(!isset($_SERVER['REQUEST_URI'])){
+            $_SERVER['REQUEST_URI'] = '/';
+        }
+        $_SERVER[Server::SERVER_DATA_KEY_TIMESTAMP] = time();
+    }
+
+    public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
+        self::$_response = $response;
+        $this->initReceive($request);
+        $uri = Tool::getArrayVal(self::$_reqServers, 'request_uri', '/');
+        $uriCheckRes = $this->checkRequestUri($uri);
+        if(strlen($uriCheckRes['error']) > 0){
+            $error = new Result();
+            $error->setCodeMsg(ErrorCode::COMMON_ROUTE_URI_FORMAT_ERROR, $uriCheckRes['error']);
+            $result = $error->getJson();
+            unset($error);
+            return $result;
+        }
+        $uri = $uriCheckRes['uri'];
+        self::$_reqServers['request_uri'] = $uriCheckRes['uri'];
+        $httpObj = new Http($uri);
 
         try{
             $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
