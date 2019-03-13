@@ -182,6 +182,7 @@ abstract class BaseServer {
             'yaconf',
             'swoole',
             'SeasLog',
+            'msgpack',
         ];
         foreach ($extensionList as $extName) {
             if(!extension_loaded($extName)){

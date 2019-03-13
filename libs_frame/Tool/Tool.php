@@ -214,4 +214,27 @@ class Tool {
         $uri = $tempUri;
         return '';
     }
+
+    /**
+     * 压缩数据
+     * @param mixed $data 需要压缩的数据
+     * @return bool|string
+     */
+    public static function pack($data) {
+        return msgpack_pack($data);
+    }
+
+    /**
+     * 解压数据
+     * @param string $data 压缩数据字符串
+     * @param string $className 解压类型名称
+     * @return mixed
+     */
+    public static function unpack(string $data,string $className='array') {
+        if($className == 'array'){
+            return msgpack_unpack($data);
+        } else {
+            return msgpack_unpack($data, $className);
+        }
+    }
 }
