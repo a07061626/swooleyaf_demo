@@ -7,8 +7,10 @@
  */
 namespace SyServer;
 
+use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
+use Exception\Swoole\ServerException;
 use Log\Log;
 use Tool\Dir;
 use Tool\Tool;
@@ -63,6 +65,11 @@ abstract class BaseServer {
      * @var string
      */
     protected static $_serverToken = '';
+    /**
+     * 请求开始毫秒级时间戳
+     * @var float
+     */
+    protected static $_reqStartTime = 0.0;
 
     public function __construct(int $port){
         if(($port <= 1024) || ($port > 65535)){
@@ -87,6 +94,7 @@ abstract class BaseServer {
         $this->_configs['swoole']['buffer_output_size'] = Project::SIZE_CLIENT_BUFFER_OUTPUT;
 
         define('SY_SERVER_IP', $this->_configs['server']['host']);
+        define('SY_REQUEST_MAX_HANDLING', (int)$this->_configs['server']['request']['maxnum']['handling']);
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
         $this->_pidFile = SY_ROOT . '/pidfile/' . SY_MODULE . $this->_port . '.pid';
@@ -259,6 +267,38 @@ abstract class BaseServer {
         }
 
         return $funcName;
+    }
+
+    /**
+     * 检查请求限流
+     * @throws \Exception\Swoole\ServerException
+     */
+    protected static function checkRequestCurrentLimit() {
+        $nowHandlingNum = self::$_syServer->incr(self::$_serverToken, 'request_handling', 1);
+        if($nowHandlingNum > SY_REQUEST_MAX_HANDLING){
+            throw new ServerException('服务繁忙', ErrorCode::COMMON_SERVER_BUSY);
+        }
+    }
+
+    /**
+     * 记录耗时长的请求
+     * @param string $uri 请求uri
+     * @param string|array $data 请求数据
+     * @param int $limitTime 限制时间,单位为毫秒
+     */
+    protected function reportLongTimeReq(string $uri, $data,int $limitTime) {
+        $handleTime = (int)((microtime(true) - self::$_reqStartTime) * 1000);
+        self::$_reqStartTime = 0;
+        if($handleTime > $limitTime){ //执行时间超过限制的请求记录到日志便于分析具体情况
+            $content = 'handle req use time ' . $handleTime . ' ms,uri:' . $uri . ',data:';
+            if(is_string($data)){
+                $content .= $data;
+            } else {
+                $content .= Tool::jsonEncode($data, JSON_UNESCAPED_UNICODE);
+            }
+
+            Log::warn($content);
+        }
     }
 
     public function onClose(\swoole_server $server,int $fd,int $reactorId) {

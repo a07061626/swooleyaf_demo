@@ -10,7 +10,6 @@ namespace SyServer;
 use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
-use Exception\Swoole\ServerException;
 use Exception\Validator\ValidatorException;
 use Log\Log;
 use Request\RequestSign;
@@ -65,10 +64,10 @@ class HttpServer extends BaseServer {
      */
     protected $_cors = [];
     /**
-     * 请求开始毫秒级时间戳
-     * @var float
+     * swoole请求cookie域名数组
+     * @var array
      */
-    protected static $_reqStartTime = 0.0;
+    private $_reqCookieDomains = [];
 
     public function __construct(int $port){
         parent::__construct($port);
@@ -84,6 +83,7 @@ class HttpServer extends BaseServer {
         $this->_cors = Tool::getConfig('cors.' . SY_ENV . SY_PROJECT);
         $this->_cors['allow']['headerStr'] = isset($this->_cors['allow']['headers']) ? implode(', ', $this->_cors['allow']['headers']) : '';
         $this->_cors['allow']['methodStr'] = isset($this->_cors['allow']['methods']) ? implode(', ', $this->_cors['allow']['methods']) : '';
+        $this->_reqCookieDomains = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.domain.cookie');
     }
 
     /**
@@ -174,38 +174,6 @@ class HttpServer extends BaseServer {
             return self::RESPONSE_RESULT_TYPE_ALLOW;
         }
         return self::RESPONSE_RESULT_TYPE_ACCEPT;
-    }
-
-    /**
-     * 检查请求限流
-     * @throws \Exception\Swoole\ServerException
-     */
-    protected static function checkRequestCurrentLimit() {
-        $nowHandlingNum = self::$_syServer->incr(self::$_serverToken, 'request_handling', 1);
-        if($nowHandlingNum > SY_REQUEST_MAX_HANDLING){
-            throw new ServerException('服务繁忙', ErrorCode::COMMON_SERVER_BUSY);
-        }
-    }
-
-    /**
-     * 记录耗时长的请求
-     * @param string $uri 请求uri
-     * @param string|array $data 请求数据
-     * @param int $limitTime 限制时间,单位为毫秒
-     */
-    protected function reportLongTimeReq(string $uri, $data,int $limitTime) {
-        $handleTime = (int)((microtime(true) - self::$_reqStartTime) * 1000);
-        self::$_reqStartTime = 0;
-        if($handleTime > $limitTime){ //执行时间超过限制的请求记录到日志便于分析具体情况
-            $content = 'handle req use time ' . $handleTime . ' ms,uri:' . $uri . ',data:';
-            if(is_string($data)){
-                $content .= $data;
-            } else {
-                $content .= Tool::jsonEncode($data, JSON_UNESCAPED_UNICODE);
-            }
-
-            Log::warn($content);
-        }
     }
 
     /**
