@@ -18,22 +18,6 @@ trait BasicBaseTrait {
         $this->checkServerBaseTrait();
     }
 
-    /**
-     * 获取服务配置信息
-     * @param string $field 配置字段名称
-     * @param null $default
-     * @return mixed
-     */
-    public static function getServerConfig(string $field=null, $default=null) {
-        if (is_null($field)) {
-            $data = self::$_syServer->get(self::$_serverToken);
-            return $data === false ? [] : $data;
-        } else {
-            $data = self::$_syServer->get(self::$_serverToken, $field);
-            return $data === false ? $default : $data;
-        }
-    }
-
     protected function initTableBase() {
         register_shutdown_function('\SyError\ErrorHandler::handleFatalError');
 
