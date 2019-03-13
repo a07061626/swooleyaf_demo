@@ -341,8 +341,7 @@ class HttpServer extends BaseServer {
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
-                $res = $server->task($taskDataSign, 0);
-                Log::log('task:' . $res);
+                $server->task($taskDataSign, 0);
             });
 
 //            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
