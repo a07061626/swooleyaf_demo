@@ -15,6 +15,7 @@ use Log\Log;
 use Request\RequestSign;
 use Response\Result;
 use Response\SyResponseHttp;
+use Tool\SyPack;
 use Tool\Tool;
 use Traits\HttpServerTrait;
 use Traits\PreProcessHttpFrameTrait;
@@ -68,6 +69,10 @@ class HttpServer extends BaseServer {
      * @var array
      */
     private $_reqCookieDomains = [];
+    /**
+     * @var \Tool\SyPack
+     */
+    private $_messagePack = null;
 
     public function __construct(int $port){
         parent::__construct($port);
@@ -80,6 +85,7 @@ class HttpServer extends BaseServer {
         }
         define('SY_SERVER_TYPE', $serverType);
 
+        $this->_messagePack = new SyPack();
         $this->_cors = Tool::getConfig('cors.' . SY_ENV . SY_PROJECT);
         $this->_cors['allow']['headerStr'] = isset($this->_cors['allow']['headers']) ? implode(', ', $this->_cors['allow']['headers']) : '';
         $this->_cors['allow']['methodStr'] = isset($this->_cors['allow']['methods']) ? implode(', ', $this->_cors['allow']['methods']) : '';
@@ -323,6 +329,34 @@ class HttpServer extends BaseServer {
 
     public function onWorkerStart(\swoole_server $server, $workerId){
         $this->basicWorkStart($server, $workerId);
+
+        if($workerId == 0){
+//            $this->addTaskBase($server);
+//            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+//                'task_module' => SY_MODULE,
+//                'task_command' => Project::TASK_TYPE_CLEAR_API_SIGN_CACHE,
+//                'task_params' => [],
+//            ]);
+//            $taskDataSign = $this->_messagePack->packData();
+//            $this->_messagePack->init();
+//
+//            $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
+//                $server->task($taskDataSign);
+//            });
+//
+//            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+//                'task_module' => SY_MODULE,
+//                'task_command' => Project::TASK_TYPE_REFRESH_TOKEN_EXPIRE,
+//                'task_params' => [],
+//            ]);
+//            $taskDataToken = $this->_messagePack->packData();
+//            $this->_messagePack->init();
+//
+//            $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
+//                $server->task($taskDataToken);
+//            });
+//            $this->addTaskHttpTrait($server);
+        }
     }
 
     public function onWorkerStop(\swoole_server $server, int $workerId){
