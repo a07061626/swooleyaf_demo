@@ -9,14 +9,18 @@ namespace SyServer;
 
 use Constant\ErrorCode;
 use Constant\Server;
-use Log\Log;
 use Request\RequestSign;
 use Response\Result;
 use Tool\Tool;
+use Traits\HttpServerTrait;
+use Traits\Server\BasicHttpTrait;
 use Yaf\Registry;
 use Yaf\Request\Http;
 
 class HttpServer extends BaseServer {
+    use BasicHttpTrait;
+    use HttpServerTrait;
+
     /**
      * HTTP响应
      * @var \swoole_http_response
@@ -137,6 +141,7 @@ class HttpServer extends BaseServer {
     }
 
     public function start(){
+        $this->initTableHttp();
         $this->_server = new \swoole_websocket_server($this->_host, $this->_port);
         $this->_server->set($this->_configs['swoole']);
         $this->_server->on('request', [$this, 'onRequest']);

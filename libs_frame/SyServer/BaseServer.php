@@ -11,9 +11,14 @@ use Constant\Project;
 use Constant\Server;
 use Log\Log;
 use Tool\Tool;
+use Traits\BaseServerTrait;
+use Traits\Server\BasicBaseTrait;
 use Yaf\Application;
 
 abstract class BaseServer {
+    use BasicBaseTrait;
+    use BaseServerTrait;
+
     /**
      * @var \swoole_server
      */
@@ -52,6 +57,11 @@ abstract class BaseServer {
      * @var string
      */
     protected static $_reqId = '';
+    /**
+     * 服务token码,用于标识不同的服务,每个服务的token不一样
+     * @var string
+     */
+    protected static $_serverToken = '';
 
     public function __construct(int $port){
         if(($port <= 1024) || ($port > 65535)){
@@ -90,6 +100,9 @@ abstract class BaseServer {
             fwrite($tipFileObj, '');
             fclose($tipFileObj);
         }
+
+        //生成服务唯一标识
+        self::$_serverToken = hash('crc32b', $this->_configs['server']['host'] . ':' . $this->_configs['server']['port']);
 
         //设置日志目录
         Log::setPath(SY_LOG_PATH);
@@ -209,5 +222,19 @@ abstract class BaseServer {
 
         file_put_contents($this->_pidFile, $server->master_pid);
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
+
+        self::$_syServer->set(self::$_serverToken, [
+            'memory_usage' => memory_get_usage(),
+            'timer_time' => 0,
+            'request_times' => 0,
+            'request_handling' => 0,
+            'host_local' => $this->_host,
+            'storepath_image' => '/',
+            'storepath_music' => '/',
+            'storepath_resources' => '/',
+            'storepath_cache' => '/',
+            'token_etime' => time() + 7200,
+            'unique_num' => 100000000,
+        ]);
     }
 }
