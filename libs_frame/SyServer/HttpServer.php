@@ -371,19 +371,30 @@ class HttpServer extends BaseServer {
         self::$_response = $response;
         $this->initReceive($request);
 
-        $rspHeaders = [];
-        $handleHeaderRes = $this->handleReqHeader($rspHeaders);
-        if($handleHeaderRes == HttpServer::RESPONSE_RESULT_TYPE_ACCEPT){
-            self::$_rspMsg = $this->handleReqService($request, $rspHeaders);
-            $this->setRspCookies($response, Registry::get(Server::REGISTRY_NAME_RESPONSE_COOKIE));
-            $this->setRspHeaders($response, Registry::get(Server::REGISTRY_NAME_RESPONSE_HEADER));
-        } else if($handleHeaderRes == HttpServer::RESPONSE_RESULT_TYPE_ALLOW){
-            $rspHeaders['Content-Type'] = 'application/json; charset=utf-8';
-            $this->setRspHeaders($response, $rspHeaders);
+        if(is_null(self::$_reqTask)){
+            $rspHeaders = [];
+            $handleHeaderRes = $this->handleReqHeader($rspHeaders);
+            if($handleHeaderRes == HttpServer::RESPONSE_RESULT_TYPE_ACCEPT){
+                self::$_rspMsg = $this->handleReqService($request, $rspHeaders);
+                $this->setRspCookies($response, Registry::get(Server::REGISTRY_NAME_RESPONSE_COOKIE));
+                $this->setRspHeaders($response, Registry::get(Server::REGISTRY_NAME_RESPONSE_HEADER));
+            } else if($handleHeaderRes == HttpServer::RESPONSE_RESULT_TYPE_ALLOW){
+                $rspHeaders['Content-Type'] = 'application/json; charset=utf-8';
+                $this->setRspHeaders($response, $rspHeaders);
+            } else {
+                $rspHeaders['Content-Type'] = 'text/plain; charset=utf-8';
+                $rspHeaders['Syresp-Status'] = 403;
+                $this->setRspHeaders($response, $rspHeaders);
+            }
         } else {
-            $rspHeaders['Content-Type'] = 'text/plain; charset=utf-8';
-            $rspHeaders['Syresp-Status'] = 403;
-            $this->setRspHeaders($response, $rspHeaders);
+            self::$_syServer->incr(self::$_serverToken, 'request_times', 1);
+            $this->_server->task(self::$_reqTask, random_int(1, $this->_taskMaxId));
+            $result = new Result();
+            $result->setData([
+                'msg' => 'task received',
+            ]);
+            self::$_rspMsg = $result->getJson();
+            unset($result);
         }
 
         $response->end(self::$_rspMsg);
