@@ -341,7 +341,7 @@ class HttpServer extends BaseServer {
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
-                $server->task($taskDataSign);
+                $server->task($taskDataSign, 0);
             });
 
             $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
@@ -353,7 +353,7 @@ class HttpServer extends BaseServer {
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
-                $server->task($taskDataToken);
+                $server->task($taskDataToken, 0);
             });
             $this->addTaskHttpTrait($server);
         }
