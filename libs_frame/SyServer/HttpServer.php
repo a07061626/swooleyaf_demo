@@ -331,22 +331,17 @@ class HttpServer extends BaseServer {
         $this->basicWorkStart($server, $workerId);
 
         if($workerId == 0){
-//            $this->addTaskBase($server);
+            $this->addTaskBase($server);
             $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
                 'task_module' => SY_MODULE,
                 'task_command' => Project::TASK_TYPE_CLEAR_API_SIGN_CACHE,
                 'task_params' => [],
             ]);
             $taskDataSign = $this->_messagePack->packData();
-            if(is_string($taskDataSign)){
-                Log::log('xxx1:' . $taskDataSign);
-            } else {
-                Log::log('xxx2');
-            }
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
-                $server->task($taskDataSign);
+                $server->task($taskDataSign, 0);
             });
 
             $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
@@ -358,7 +353,7 @@ class HttpServer extends BaseServer {
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
-                $server->task($taskDataToken);
+                $server->task($taskDataToken, 0);
             });
             $this->addTaskHttpTrait($server);
         }
