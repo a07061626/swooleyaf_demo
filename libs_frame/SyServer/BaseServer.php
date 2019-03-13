@@ -482,10 +482,10 @@ abstract class BaseServer {
         }
 
         $server->tick(Project::TIME_TASK_CLEAR_LOCAL_USER, function() use ($server, $taskDataUser) {
-            $server->task($taskDataUser, 0);
+            $server->task($taskDataUser);
         });
         $server->tick(Project::TIME_TASK_CLEAR_LOCAL_WX, function() use ($server, $taskDataWx) {
-            $server->task($taskDataWx, 0);
+            $server->task($taskDataWx);
         });
         $this->addTaskBaseTrait($server);
     }
