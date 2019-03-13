@@ -44,14 +44,15 @@ class ValidatorPlugin extends Plugin_Abstract {
             self::$verifyList[$verifyKey] = BaseReflect::getValidatorAnnotations($controllerClass, $methodName);
         }
 
+        Log::log('xxx2');
+
         foreach (self::$verifyList[$verifyKey] as $eVerify) {
+            Log::log('xxx3:' . print_r($eVerify, true));
             $data = SyRequest::getParams($eVerify->getField());
             $verifyRes = Validator::validator($data, $eVerify);
             if (strlen($verifyRes) > 0) {
                 throw new ValidatorException($verifyRes, ErrorCode::COMMON_PARAM_ERROR);
             }
         }
-
-        Log::log('xxx2');
     }
 }
