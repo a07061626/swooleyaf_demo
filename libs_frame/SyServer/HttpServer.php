@@ -9,6 +9,7 @@ namespace SyServer;
 
 use Constant\ErrorCode;
 use Constant\Server;
+use Request\RequestSign;
 use Response\Result;
 use Tool\Tool;
 use Yaf\Registry;
@@ -40,6 +41,11 @@ class HttpServer extends BaseServer {
      * @var string
      */
     private static $_reqTask = null;
+    /**
+     * 请求开始毫秒级时间戳
+     * @var float
+     */
+    protected static $_reqStartTime = 0.0;
 
     public function __construct(int $port){
         parent::__construct($port);
@@ -79,6 +85,21 @@ class HttpServer extends BaseServer {
         $_SERVER[Server::SERVER_DATA_KEY_TIMESTAMP] = time();
     }
 
+    private function initRequest(\swoole_http_request $request,array $rspHeaders) {
+        self::$_reqStartTime = microtime(true);
+        $_GET = $request->get ?? [];
+        $_FILES = $request->files ?? [];
+        $_COOKIE = $request->cookie ?? [];
+        $GLOBALS['HTTP_RAW_POST_DATA'] = $request->rawContent();
+        $_POST[RequestSign::KEY_SIGN] = $_GET[RequestSign::KEY_SIGN] ?? '';
+        unset($_GET[RequestSign::KEY_SIGN]);
+        //注册全局信息
+        Registry::set(Server::REGISTRY_NAME_REQUEST_HEADER, self::$_reqHeaders);
+        Registry::set(Server::REGISTRY_NAME_REQUEST_SERVER, self::$_reqServers);
+        Registry::set(Server::REGISTRY_NAME_RESPONSE_HEADER, $rspHeaders);
+        Registry::set(Server::REGISTRY_NAME_RESPONSE_COOKIE, []);
+    }
+
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response) {
         self::$_response = $response;
         $this->initReceive($request);
@@ -93,6 +114,9 @@ class HttpServer extends BaseServer {
         }
         $uri = $uriCheckRes['uri'];
         self::$_reqServers['request_uri'] = $uriCheckRes['uri'];
+
+        $rspHeaders = [];
+        $this->initRequest($request, $rspHeaders);
         $httpObj = new Http($uri);
 
         try{
