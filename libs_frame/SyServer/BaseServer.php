@@ -493,6 +493,19 @@ abstract class BaseServer {
     public function onClose(\swoole_server $server,int $fd,int $reactorId) {
     }
 
+    /**
+     * 任务完成
+     * @param \swoole_server $server
+     * @param int $taskId
+     * @param string $data
+     */
+    public function onFinish(\swoole_server $server, $taskId,string $data){
+        $dataArr = Tool::jsonDecode($data);
+        if ((!is_array($dataArr)) || ($dataArr['code'] > 0)) {
+            Log::info('handle task fail with msg:' . $data);
+        }
+    }
+
     public function onManagerStart(\swoole_server $server) {
         @cli_set_process_title(Server::PROCESS_TYPE_MANAGER . SY_MODULE . $this->_port);
     }

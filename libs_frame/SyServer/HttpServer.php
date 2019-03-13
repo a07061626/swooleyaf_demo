@@ -338,6 +338,11 @@ class HttpServer extends BaseServer {
                 'task_params' => [],
             ]);
             $taskDataSign = $this->_messagePack->packData();
+            if(is_string($taskDataSign)){
+                Log::log('xxx1:' . $taskDataSign);
+            } else {
+                Log::log('xxx2');
+            }
             $this->_messagePack->init();
 
             $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
@@ -429,6 +434,7 @@ class HttpServer extends BaseServer {
             'workerStart' => 'onWorkerStart',
             'managerStart' => 'onManagerStart',
             'task' => 'onTask',
+            'finish' => 'onFinish',
         ]);
     }
 }
