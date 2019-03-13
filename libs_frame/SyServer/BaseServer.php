@@ -235,6 +235,32 @@ abstract class BaseServer {
         }
     }
 
+    /**
+     * 获取预处理函数
+     * @param string $uri
+     * @param array $frameMap
+     * @param array $projectMap
+     * @return bool|string
+     */
+    protected function getPreProcessFunction(string $uri,array $frameMap,array $projectMap) {
+        $funcName = '';
+        if(strlen($uri) == 5){
+            if (isset($frameMap[$uri])) {
+                $funcName = $frameMap[$uri];
+                if(strpos($funcName, 'preProcessFrame') !== 0){
+                    $funcName = false;
+                }
+            } else if(isset($projectMap[$uri])){
+                $funcName = $projectMap[$uri];
+                if(strpos($funcName, 'preProcessProject') !== 0){
+                    $funcName = false;
+                }
+            }
+        }
+
+        return $funcName;
+    }
+
     public function onClose(\swoole_server $server,int $fd,int $reactorId) {
     }
 
