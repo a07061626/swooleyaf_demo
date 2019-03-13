@@ -331,30 +331,30 @@ class HttpServer extends BaseServer {
         $this->basicWorkStart($server, $workerId);
 
         if($workerId == 0){
-            $this->addTaskBase($server);
-//            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
-//                'task_module' => SY_MODULE,
-//                'task_command' => Project::TASK_TYPE_CLEAR_API_SIGN_CACHE,
-//                'task_params' => [],
-//            ]);
-//            $taskDataSign = $this->_messagePack->packData();
-//            $this->_messagePack->init();
-//
-//            $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
-//                $server->task($taskDataSign);
-//            });
-//
-//            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
-//                'task_module' => SY_MODULE,
-//                'task_command' => Project::TASK_TYPE_REFRESH_TOKEN_EXPIRE,
-//                'task_params' => [],
-//            ]);
-//            $taskDataToken = $this->_messagePack->packData();
-//            $this->_messagePack->init();
-//
-//            $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
-//                $server->task($taskDataToken);
-//            });
+//            $this->addTaskBase($server);
+            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_CLEAR_API_SIGN_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataSign = $this->_messagePack->packData();
+            $this->_messagePack->init();
+
+            $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
+                $server->task($taskDataSign);
+            });
+
+            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_REFRESH_TOKEN_EXPIRE,
+                'task_params' => [],
+            ]);
+            $taskDataToken = $this->_messagePack->packData();
+            $this->_messagePack->init();
+
+            $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
+                $server->task($taskDataToken);
+            });
             $this->addTaskHttpTrait($server);
         }
     }
