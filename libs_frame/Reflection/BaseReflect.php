@@ -111,14 +111,14 @@ class BaseReflect {
             if ($controllerType == 'b1') {
                 unset($resArr[Validator::ANNOTATION_TAG_SY_TOKEN]);
             } else {
-//                $tokenResult = new ValidatorResult();
-//                $tokenResult->setExplain('令牌');
-//                $tokenResult->setField(Validator::ANNOTATION_TAG_SY_TOKEN);
-//                $tokenResult->setType('string');
-//                $tokenResult->setRules([
-//                    'sytoken' => 1,
-//                ]);
-//                $resArr[Validator::ANNOTATION_TAG_SY_TOKEN] = $tokenResult;
+                $tokenResult = new ValidatorResult();
+                $tokenResult->setExplain('令牌');
+                $tokenResult->setField(Validator::ANNOTATION_TAG_SY_TOKEN);
+                $tokenResult->setType('string');
+                $tokenResult->setRules([
+                    'sytoken' => 1,
+                ]);
+                $resArr[Validator::ANNOTATION_TAG_SY_TOKEN] = $tokenResult;
 
                 if ($controllerType == 'a1') {
                     $signResult = new ValidatorResult();
