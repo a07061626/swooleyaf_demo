@@ -79,7 +79,7 @@ class HttpServer extends BaseServer {
 
 //        $projectLength = strlen(SY_PROJECT);
 //        $serverType = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules.' . substr(SY_MODULE, $projectLength) . '.type');
-        $serverType = 'frontgate';
+        $serverType = 'api';
         if(!in_array($serverType, [Server::SERVER_TYPE_API_GATE, Server::SERVER_TYPE_FRONT_GATE])){
             exit('服务端类型不支持' . PHP_EOL);
         }
@@ -411,6 +411,7 @@ class HttpServer extends BaseServer {
             $taskCommand = Tool::getArrayVal($baseRes['params'], 'task_command', '');
             switch ($taskCommand) {
                 case Project::TASK_TYPE_CLEAR_API_SIGN_CACHE:
+                    $this->clearApiSign();
                     break;
                 default:
                     $traitRes = $this->handleTaskHttpTrait($server, $taskId, $fromId, $baseRes);
