@@ -174,6 +174,7 @@ abstract class BaseServer {
 
         //检查必要的扩展是否存在
         $extensionList = [
+            'yac',
             'yaf',
             'PDO',
             'pcre',
@@ -195,6 +196,9 @@ abstract class BaseServer {
         }
         if(version_compare(SEASLOG_VERSION, Server::VERSION_MIN_SEASLOG, '<')){
             exit('seaslog版本必须大于等于' . Server::VERSION_MIN_SEASLOG . PHP_EOL);
+        }
+        if(version_compare(YAC_VERSION, Server::VERSION_MIN_YAC, '<')){
+            exit('yac版本必须大于等于' . Server::VERSION_MIN_YAC . PHP_EOL);
         }
         if(version_compare(\YAF\VERSION, Server::VERSION_MIN_YAF, '<')){
             exit('yaf版本必须大于等于' . Server::VERSION_MIN_YAF . PHP_EOL);
@@ -323,6 +327,21 @@ abstract class BaseServer {
             @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
         } else {
             @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
+        }
+
+        if($workerId == 0){ //保证每一个服务只执行一次定时任务
+            $modules = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules');
+            foreach (Project::$totalModuleBase as $eModuleName) {
+                $moduleData = Tool::getArrayVal($modules, $eModuleName, []);
+                if (!empty($moduleData)) {
+                    self::$_syServices->set($eModuleName, [
+                        'module' => $eModuleName,
+                        'host' => $moduleData['host'],
+                        'port' => (string)$moduleData['port'],
+                        'type' => $moduleData['type'],
+                    ]);
+                }
+            }
         }
     }
 

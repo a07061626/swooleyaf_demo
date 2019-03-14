@@ -27,6 +27,8 @@ class Server {
     const SERVER_TYPE_API_GATE = 'api'; //服务端类型-api入口
     const SERVER_TYPE_API_MODULE = 'rpc'; //服务端类型-api模块
     const SERVER_TYPE_FRONT_GATE = 'frontgate'; //服务端类型-前端入口
+    const SERVER_HTTP_TAG_RESPONSE_EOF = "\r\r\rswoole@yaf\r\r\r"; //服务端http标识-响应结束符
+    const SERVER_HTTP_TAG_REQUEST_HEADER = 'swoole-yaf'; //服务端http标识-请求头名称
     const SERVER_DATA_KEY_TIMESTAMP = 'SYREQ_TIME'; //服务端内部数据键名-请求时间戳
     const SERVER_DATA_KEY_TASK = '_sytask'; //服务端内部数据键名-task
 
@@ -62,4 +64,17 @@ class Server {
     const VERSION_MIN_SEASLOG = '1.9.0'; //最低版本-seaslog
     const VERSION_MIN_YAC = '2.0.2'; //最低版本-yac
     const VERSION_MIN_YAF = '3.0.7'; //最低版本-yaf
+
+    //YAC常量,以0000开头的前缀为框架内部前缀,并键名总长度不超过48个字符串
+    const YAC_PREFIX_FUSE = '0000'; //前缀-熔断器
+
+    //熔断器常量
+    const FUSE_STATE_OPEN = 'open'; //状态-开启
+    const FUSE_STATE_CLOSED = 'closed'; //状态-关闭
+    const FUSE_STATE_HALF_OPEN = 'half_open'; //状态-半开
+    const FUSE_TIME_ERROR_STAT = 15; //错误统计间隔时间,单位为秒
+    const FUSE_TIME_OPEN_KEEP = 10; //开启状态保持时间,单位为秒
+    const FUSE_NUM_REQUEST_ERROR = 20; //请求出错次数
+    const FUSE_NUM_HALF_REQUEST_SUCCESS = 10; //半开状态请求成功次数
+    const FUSE_MSG_REQUEST_ERROR = '{"code":10001,"data":[],"msg":"服务繁忙,请稍后重试"}'; //请求出错提示消息
 }

@@ -13,8 +13,20 @@ trait BasicBaseTrait {
      * @var \swoole_table
      */
     protected static $_syServer = null;
+    /**
+     * 注册的服务信息表
+     * @var \swoole_table
+     */
+    protected static $_syServices = null;
 
     protected function checkServerBase() {
+        $numModules = $this->_configs['server']['cachenum']['modules'];
+        if ($numModules < 1) {
+            exit('服务模块缓存数量不能小于1');
+        } else if (($numModules & ($numModules - 1)) != 0) {
+            exit('服务模块缓存数量必须是1的指数倍');
+        }
+
         $this->checkServerBaseTrait();
     }
 
@@ -34,6 +46,16 @@ trait BasicBaseTrait {
         }
     }
 
+    /**
+     * 通过模块名称获取注册的服务信息
+     * @param string $moduleName
+     * @return array
+     */
+    public static function getServiceInfo(string $moduleName) {
+        $serviceInfo = self::$_syServices->get($moduleName);
+        return $serviceInfo === false ? [] : $serviceInfo;
+    }
+
     protected function initTableBase() {
         register_shutdown_function('\SyError\ErrorHandler::handleFatalError');
 
@@ -50,6 +72,13 @@ trait BasicBaseTrait {
         self::$_syServer->column('token_etime', \swoole_table::TYPE_INT, 8);
         self::$_syServer->column('unique_num', \swoole_table::TYPE_INT, 8);
         self::$_syServer->create();
+
+        self::$_syServices = new \swoole_table($this->_configs['server']['cachenum']['modules']);
+        self::$_syServices->column('module', \swoole_table::TYPE_STRING, 30);
+        self::$_syServices->column('host', \swoole_table::TYPE_STRING, 128);
+        self::$_syServices->column('port', \swoole_table::TYPE_STRING, 5);
+        self::$_syServices->column('type', \swoole_table::TYPE_STRING, 16);
+        self::$_syServices->create();
 
         $this->initTableBaseTrait();
     }
