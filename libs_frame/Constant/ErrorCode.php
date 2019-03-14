@@ -41,6 +41,9 @@ class ErrorCode {
     const SIGN_TIME_ERROR = 103001;
     const SIGN_NONCE_ERROR = 103002;
 
+    //Twig错误,取值范围:103600-103699
+    const TWIG_PARAM_ERROR = 103600;
+
     protected static $msgArr = [
         self::COMMON_SUCCESS => '成功',
         self::COMMON_PARAM_ERROR => '参数错误',
@@ -62,6 +65,7 @@ class ErrorCode {
         self::SIGN_ERROR => '签名值错误',
         self::SIGN_TIME_ERROR => '签名时间错误',
         self::SIGN_NONCE_ERROR => '签名随机字符串错误',
+        self::TWIG_PARAM_ERROR => 'Twig参数错误',
     ];
 
     /**

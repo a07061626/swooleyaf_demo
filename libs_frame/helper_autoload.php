@@ -11,6 +11,15 @@ final class SyFrameLoader {
      */
     private $preHandleMap = [];
     /**
+     * smarty未初始化标识 true：未初始化 false：已初始化
+     * @var bool
+     */
+    private $smartyStatus = true;
+    /**
+     * @var array
+     */
+    private $smartyRootClasses = [];
+    /**
      * aliOpenCore未初始化标识 true：未初始化 false：已初始化
      * @var bool
      */
@@ -19,6 +28,9 @@ final class SyFrameLoader {
     private function __construct() {
         $this->preHandleMap = [
             'AliOpen' => 'preHandleAliOpen',
+            'Twig' => 'preHandleTwig',
+            'Smarty' => 'preHandleSmarty',
+            'SmartyBC' => 'preHandleSmarty',
         ];
     }
 
@@ -61,6 +73,28 @@ final class SyFrameLoader {
         }
 
         return SY_FRAME_LIBS_ROOT . $className . '.php';
+    }
+
+    private function preHandleTwig(string $className) : string {
+        return SY_FRAME_LIBS_ROOT . 'Template/' . str_replace('_', '/', $className) . '.php';
+    }
+
+    private function preHandleSmarty(string $className) : string {
+        if ($this->smartyStatus) {
+            $smartyLibDir = SY_FRAME_LIBS_ROOT . 'Template/Smarty/libs/';
+            define('SMARTY_DIR', $smartyLibDir);
+            define('SMARTY_SYSPLUGINS_DIR', $smartyLibDir . '/sysplugins/');
+            define('SMARTY_RESOURCE_CHAR_SET', 'UTF-8');
+
+            $this->smartyStatus = false;
+        }
+
+        $lowerClassName = strtolower($className);
+        if(isset($this->smartyRootClasses[$lowerClassName])){
+            return SMARTY_DIR . $this->smartyRootClasses[$lowerClassName];
+        } else {
+            return SMARTY_SYSPLUGINS_DIR . $lowerClassName . '.php';
+        }
     }
 
     /**
