@@ -1,10 +1,10 @@
 <?php
 class IndexController extends CommonController {
-    public $signStatus = true;
+    public $signStatus = false;
 
     public function init() {
         parent::init();
-        $this->signStatus = true;
+        $this->signStatus = false;
     }
 
     /**
