@@ -14,6 +14,9 @@ class HttpServer extends BaseServer {
 
     public function start(){
         $this->_server = new \swoole_websocket_server('172.18.134.124', 7100);
+        $this->_server->set([
+            'daemonize' => 1,
+        ]);
         $this->_server->on('message', function (\swoole_websocket_server $server, $frame) {
             $server->push($frame->fd, "this is server");
         });
