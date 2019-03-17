@@ -8,6 +8,7 @@
 namespace SyServer;
 
 use Constant\Server;
+use Log\Log;
 use Tool\Dir;
 use Tool\Tool;
 
@@ -50,6 +51,8 @@ abstract class BaseServer {
         $this->_configs = Tool::getConfig('syserver.' . SY_ENV . SY_MODULE);
         $this->_configs['server']['port'] = $port;
 
+        define('SY_SERVER_IP', $this->_configs['server']['host']);
+
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
         $this->_pidFile = SY_ROOT . '/pidfile/' . SY_MODULE . $this->_port . '.pid';
@@ -79,17 +82,17 @@ abstract class BaseServer {
     }
 
     protected function basicWorkStop(\swoole_server $server,int $workId) {
-//        $errCode = $server->getLastError();
-//        if($errCode > 0){
-//            Log::error('swoole work stop,workId=' . $workId . ',errorCode=' . $errCode . ',errorMsg=' . print_r(error_get_last(), true));
-//        }
+        $errCode = $server->getLastError();
+        if($errCode > 0){
+            Log::error('swoole work stop,workId=' . $workId . ',errorCode=' . $errCode . ',errorMsg=' . print_r(error_get_last(), true));
+        }
     }
 
     protected function basicWorkError(\swoole_server $server, $workId, $workPid, $exitCode){
-//        if($exitCode > 0){
-//            $msg = 'swoole work error. work_id=' . $workId . '|work_pid=' . $workPid . '|exit_code=' . $exitCode . '|err_msg=' . $server->getLastError();
-//            Log::error($msg);
-//        }
+        if($exitCode > 0){
+            $msg = 'swoole work error. work_id=' . $workId . '|work_pid=' . $workPid . '|exit_code=' . $exitCode . '|err_msg=' . $server->getLastError();
+            Log::error($msg);
+        }
     }
 
     /**
@@ -151,6 +154,35 @@ abstract class BaseServer {
     }
 
     /**
+     * 清理僵尸进程
+     */
+    public function killZombies(){
+        //清除僵尸进程
+        $commandZombies = 'ps -A -o pid,ppid,stat,cmd|grep ' . SY_MODULE . '|awk \'{if(($3 == "Z") || ($3 == "z")) print $1}\'';
+        $execRes = Tool::execSystemCommand($commandZombies);
+        if(($execRes['code'] == 0) && !empty($execRes['data'])){
+            system('kill -9 ' . implode(' ', $execRes['data']));
+        }
+
+        //清除worker中断进程
+        $commandWorkers = 'ps -A -o pid,ppid,stat,cmd|grep ' . Server::PROCESS_TYPE_WORKER . SY_MODULE . '|awk \'{if($2 == "1") print $1}\'';
+        $execRes = Tool::execSystemCommand($commandWorkers);
+        if(($execRes['code'] == 0) && !empty($execRes['data'])){
+            system('kill -9 ' . implode(' ', $execRes['data']));
+        }
+
+        //清除task中断进程
+        $commandTasks = 'ps -A -o pid,ppid,stat,cmd|grep ' . Server::PROCESS_TYPE_TASK . SY_MODULE . '|awk \'{if($2 == "1") print $1}\'';
+        $execRes = Tool::execSystemCommand($commandTasks);
+        if(($execRes['code'] == 0) && !empty($execRes['data'])){
+            system('kill -9 ' . implode(' ', $execRes['data']));
+        }
+
+        $commandTip = 'echo -e "\e[1;36m kill ' . SY_MODULE . ' zombies: \e[0m \e[1;32m \t[success] \e[0m"';
+        system($commandTip);
+    }
+
+    /**
      * 帮助信息
      */
     public function help(){
@@ -170,7 +202,9 @@ abstract class BaseServer {
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
 
         Dir::create(SY_ROOT . '/pidfile/');
-        file_put_contents($this->_pidFile, $server->master_pid);
+        if (file_put_contents($this->_pidFile, $server->master_pid) === false) {
+            Log::error('write ' . SY_MODULE . ' pid file error');
+        }
 
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
     }
