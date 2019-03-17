@@ -12,22 +12,31 @@ use Constant\Server;
 use Response\Result;
 use Response\SyResponseHttp;
 use Tool\Tool;
+use Traits\HttpServerTrait;
+use Traits\Server\BasicHttpTrait;
 use Yaf\Request\Http;
 
 class HttpServer extends BaseServer {
+    use BasicHttpTrait;
+    use HttpServerTrait;
+
     public function __construct(int $port){
         parent::__construct($port);
 
 //        $projectLength = strlen(SY_PROJECT);
 //        $serverType = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules.' . substr(SY_MODULE, $projectLength) . '.type');
-//        if(!in_array($serverType, [Server::SERVER_TYPE_API_GATE, Server::SERVER_TYPE_FRONT_GATE])){
-//            exit('服务端类型不支持' . PHP_EOL);
-//        }
+        $serverType = Server::SERVER_TYPE_API_GATE;
+        if(!in_array($serverType, [Server::SERVER_TYPE_API_GATE, Server::SERVER_TYPE_FRONT_GATE])){
+            exit('服务端类型不支持' . PHP_EOL);
+        }
 
-        define('SY_SERVER_TYPE', Server::SERVER_TYPE_FRONT_GATE);
+        define('SY_SERVER_TYPE', $serverType);
+
+        $this->checkServerHttp();
     }
 
     public function start(){
+        $this->initTableHttp();
         $this->_server = new \swoole_websocket_server($this->_host, $this->_port);
         $this->baseStart([
             'start' => 'onStart',

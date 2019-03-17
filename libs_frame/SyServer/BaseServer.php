@@ -15,9 +15,14 @@ use Log\Log;
 use Response\Result;
 use Tool\Dir;
 use Tool\Tool;
+use Traits\BaseServerTrait;
+use Traits\Server\BasicBaseTrait;
 use Yaf\Application;
 
 abstract class BaseServer {
+    use BasicBaseTrait;
+    use BaseServerTrait;
+
     /**
      * 请求服务对象
      * @var \swoole_websocket_server|\swoole_server
@@ -57,6 +62,11 @@ abstract class BaseServer {
      * @var string
      */
     protected static $_reqId = '';
+    /**
+     * 服务token码,用于标识不同的服务,每个服务的token不一样
+     * @var string
+     */
+    protected static $_serverToken = '';
 
     public function __construct(int $port){
         if (($port <= 1024) || ($port > 65535)) {
@@ -98,6 +108,9 @@ abstract class BaseServer {
             fwrite($tipFileObj, '');
             fclose($tipFileObj);
         }
+
+        //生成服务唯一标识
+        self::$_serverToken = hash('crc32b', $this->_configs['server']['host'] . ':' . $this->_configs['server']['port']);
     }
 
     private function __clone() {
@@ -292,6 +305,24 @@ abstract class BaseServer {
         }
 
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
+
+        $config = Tool::getConfig('project.' . SY_ENV . SY_PROJECT);
+        //为了防止定时任务出现重启服务的时候,导致重启期间(1-3s内)的定时任务无法处理,将定时器时间初始化为当前时间戳之前6秒
+        $timerAdvanceTime = (int)Tool::getArrayVal($config, 'timer.time.advance', 6, true);
+        $initTimerTime = time() - $timerAdvanceTime;
+        self::$_syServer->set(self::$_serverToken, [
+            'memory_usage' => memory_get_usage(),
+            'timer_time' => $initTimerTime,
+            'request_times' => 0,
+            'request_handling' => 0,
+            'host_local' => $this->_host,
+            'storepath_image' => $config['dir']['store']['image'],
+            'storepath_music' => $config['dir']['store']['music'],
+            'storepath_resources' => $config['dir']['store']['resources'],
+            'storepath_cache' => $config['dir']['store']['cache'],
+            'token_etime' => time() + 7200,
+            'unique_num' => 100000000,
+        ]);
     }
 
     /**

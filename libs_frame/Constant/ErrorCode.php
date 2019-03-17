@@ -32,6 +32,15 @@ class ErrorCode {
     const SWOOLE_SERVER_NOT_EXIST_ERROR = 100801;
     const SWOOLE_SERVER_NO_RESPONSE_ERROR = 100802;
 
+    //反射错误,取值范围:101000-101199
+    const REFLECT_RESOURCE_NOT_EXIST = 101000;
+    const REFLECT_ANNOTATION_DATA_ERROR = 101001;
+
+    //签名错误,取值范围:103000-103099
+    const SIGN_ERROR = 103000;
+    const SIGN_TIME_ERROR = 103001;
+    const SIGN_NONCE_ERROR = 103002;
+
     protected static $msgArr = [
         self::COMMON_SUCCESS => '成功',
         self::COMMON_PARAM_ERROR => '参数错误',
@@ -48,6 +57,11 @@ class ErrorCode {
         self::SWOOLE_SERVER_PARAM_ERROR => 'SWOOLE服务参数错误',
         self::SWOOLE_SERVER_NOT_EXIST_ERROR => 'SWOOLE服务不存在',
         self::SWOOLE_SERVER_NO_RESPONSE_ERROR => 'SWOOLE服务未设置响应数据',
+        self::REFLECT_RESOURCE_NOT_EXIST => '反射资源不存在',
+        self::REFLECT_ANNOTATION_DATA_ERROR => '注解数据不正确',
+        self::SIGN_ERROR => '签名值错误',
+        self::SIGN_TIME_ERROR => '签名时间错误',
+        self::SIGN_NONCE_ERROR => '签名随机字符串错误',
     ];
 
     /**
