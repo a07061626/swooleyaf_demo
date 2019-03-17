@@ -7,7 +7,12 @@
  */
 namespace SyServer;
 
+use Constant\ErrorCode;
 use Constant\Server;
+use Response\Result;
+use Response\SyResponseHttp;
+use Tool\Tool;
+use Yaf\Request\Http;
 
 class HttpServer extends BaseServer {
     public function __construct(int $port){
@@ -76,6 +81,42 @@ class HttpServer extends BaseServer {
      * @param \swoole_http_response $response
      */
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response){
-        $response->end("<h1>Hello Websocket Swoole. #" . random_int(1000, 9999) . "</h1>");
+        $uri = Tool::getArrayVal($request->server, 'request_uri', '/');
+        $uriCheckRes = $this->checkRequestUri($uri);
+        if(strlen($uriCheckRes['error']) > 0){
+            $error = new Result();
+            $error->setCodeMsg(ErrorCode::COMMON_ROUTE_URI_FORMAT_ERROR, $uriCheckRes['error']);
+            $result = $error->getJson();
+            unset($error);
+            return $result;
+        }
+        $uri = $uriCheckRes['uri'];
+
+        $error = null;
+        $result = '';
+        $httpObj = new Http($uri);
+
+        try {
+            $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
+            if(strlen($result) == 0){
+                $error = new Result();
+                $error->setCodeMsg(ErrorCode::SWOOLE_SERVER_NO_RESPONSE_ERROR, '未设置响应数据');
+            }
+        } catch (\Exception $e){
+            SyResponseHttp::header('Content-Type', 'application/json; charset=utf-8');
+            if(SY_REQ_EXCEPTION_HANDLE_TYPE){
+                $error = $this->handleReqExceptionByFrame($e);
+            } else {
+                $error = $this->handleReqExceptionByProject($e);
+            }
+        } finally {
+            unset($httpObj);
+            if(is_object($error)){
+                $result = $error->getJson();
+                unset($error);
+            }
+        }
+
+        $response->end($result);
     }
 }

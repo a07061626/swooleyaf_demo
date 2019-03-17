@@ -7,11 +7,15 @@
  */
 namespace SyServer;
 
+use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
+use Exception\Validator\ValidatorException;
 use Log\Log;
+use Response\Result;
 use Tool\Dir;
 use Tool\Tool;
+use Yaf\Application;
 
 abstract class BaseServer {
     /**
@@ -44,6 +48,10 @@ abstract class BaseServer {
      * @var string
      */
     protected $_tipFile = '';
+    /**
+     * @var \Yaf\Application
+     */
+    protected $_app = null;
     /**
      * 请求ID
      * @var string
@@ -96,6 +104,10 @@ abstract class BaseServer {
     }
 
     protected function basicWorkStart(\swoole_server $server, $workerId){
+        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
+        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
+        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
+
         if($workerId >= $server->setting['worker_num']){
             @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
         } else {
@@ -145,6 +157,43 @@ abstract class BaseServer {
      */
     public static function getReqId() : string {
         return self::$_reqId;
+    }
+
+    /**
+     * 检测请求URI
+     * @param string $uri
+     * @return array
+     */
+    protected function checkRequestUri(string $uri) : array {
+        $nowUri = $uri;
+        $checkRes = [
+            'uri' => '',
+            'error' => '',
+        ];
+
+        $uriRes = Tool::handleYafUri($nowUri);
+        if(strlen($uriRes) == 0){
+            $checkRes['uri'] = $nowUri;
+        } else {
+            $checkRes['error'] = $uriRes;
+        }
+
+        return $checkRes;
+    }
+
+    protected function handleReqExceptionByFrame(\Exception $e) {
+        if (!($e instanceof ValidatorException)) {
+            Log::error($e->getMessage(), $e->getCode(), $e->getTraceAsString());
+        }
+
+        $error = new Result();
+        if (is_numeric($e->getCode())) {
+            $error->setCodeMsg((int)$e->getCode(), $e->getMessage());
+        } else {
+            $error->setCodeMsg(ErrorCode::COMMON_SERVER_ERROR, '服务出错');
+        }
+
+        return $error;
     }
 
     /**
