@@ -44,6 +44,11 @@ abstract class BaseServer {
      * @var string
      */
     protected $_tipFile = '';
+    /**
+     * 请求ID
+     * @var string
+     */
+    protected static $_reqId = '';
 
     public function __construct(int $port){
         if (($port <= 1024) || ($port > 65535)) {
@@ -126,6 +131,20 @@ abstract class BaseServer {
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
         //启动服务
         $this->_server->start();
+    }
+
+    /**
+     * 创建请求ID
+     */
+    protected function createReqId() {
+        self::$_reqId = hash('md4', Tool::getNowTime() . Tool::createNonceStr(5));
+    }
+
+    /**
+     * @return string
+     */
+    public static function getReqId() : string {
+        return self::$_reqId;
     }
 
     /**

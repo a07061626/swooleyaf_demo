@@ -19,7 +19,7 @@ class ServiceManager {
             case 'start-all' :
                 foreach ($projects as $eProject) {
                     foreach ($eProject['listens'] as $eListen) {
-                        $command = $commandPrefix . ' -s start -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'] . ' && ' . $commandPrefix . ' -s startstatus -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
+                        $command = $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s start -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'] . ' && ' . $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s startstatus -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
                         system($command);
                     }
                 }
@@ -27,7 +27,7 @@ class ServiceManager {
             case 'stop-all' :
                 foreach ($projects as $eProject) {
                     foreach ($eProject['listens'] as $eListen) {
-                        $command = $commandPrefix . ' -s stop -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
+                        $command = $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s stop -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
                         system($command);
                     }
                 }
@@ -35,7 +35,15 @@ class ServiceManager {
             case 'restart-all' :
                 foreach ($projects as $eProject) {
                     foreach ($eProject['listens'] as $eListen) {
-                        $command = $commandPrefix . ' -s restart -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'] . ' && ' . $commandPrefix . ' -s startstatus -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
+                        $command = $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s restart -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'] . ' && ' . $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s startstatus -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
+                        system($command);
+                    }
+                }
+                break;
+            case 'kz-all' :
+                foreach ($projects as $eProject) {
+                    foreach ($eProject['listens'] as $eListen) {
+                        $command = $commandPrefix . ' -n ' . $eProject['module_path'] . ' -s kz -module ' . $eProject['module_name'] . ' -port ' . $eListen['port'];
                         system($command);
                     }
                 }
