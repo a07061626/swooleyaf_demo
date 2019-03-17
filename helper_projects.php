@@ -1,9 +1,9 @@
 <?php
 return [
     0 => [
+        'module_name' => 'a01api',
         'listens' => [
             0 => [
-                'host' => '172.18.134.124',
                 'port' => 7100,
             ],
         ],
