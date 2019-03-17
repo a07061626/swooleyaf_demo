@@ -1,12 +1,12 @@
 <?php
 class IndexController extends CommonController {
-    public $signStatus = false;
-
     public function init() {
         parent::init();
-        $this->signStatus = false;
     }
 
+    /**
+     * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
+     */
     public function indexAction(){
         $this->SyResult->setData([
             'msg' => 'hello world',
