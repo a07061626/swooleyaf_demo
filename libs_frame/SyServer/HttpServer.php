@@ -81,6 +81,7 @@ class HttpServer extends BaseServer {
      * @param \swoole_http_response $response
      */
     public function onRequest(\swoole_http_request $request,\swoole_http_response $response){
+        $this->createReqId();
         $uri = Tool::getArrayVal($request->server, 'request_uri', '/');
         $uriCheckRes = $this->checkRequestUri($uri);
         if(strlen($uriCheckRes['error']) > 0){
