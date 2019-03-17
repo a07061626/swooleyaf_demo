@@ -7,6 +7,7 @@
  */
 namespace SyServer;
 
+use Constant\Project;
 use Constant\Server;
 use Log\Log;
 use Tool\Dir;
@@ -49,9 +50,25 @@ abstract class BaseServer {
             exit('端口不合法' . PHP_EOL);
         }
         $this->_configs = Tool::getConfig('syserver.' . SY_ENV . SY_MODULE);
-        $this->_configs['server']['port'] = $port;
 
         define('SY_SERVER_IP', $this->_configs['server']['host']);
+
+        $this->_configs['server']['port'] = $port;
+        //关闭协程
+        $this->_configs['swoole']['enable_coroutine'] = false;
+        //日志
+        $this->_configs['swoole']['log_level'] = SWOOLE_LOG_INFO;
+        //开启TCP快速握手特性,可以提升TCP短连接的响应速度
+        $this->_configs['swoole']['tcp_fastopen'] = true;
+        //启用异步安全重启特性,Worker进程会等待异步事件完成后再退出
+        $this->_configs['swoole']['reload_async'] = true;
+        //进程最大等待时间,单位为秒
+        $this->_configs['swoole']['max_wait_time'] = 60;
+        //设置请求数据尺寸
+        $this->_configs['swoole']['open_length_check'] = true;
+        $this->_configs['swoole']['package_max_length'] = Project::SIZE_SERVER_PACKAGE_MAX;
+        $this->_configs['swoole']['socket_buffer_size'] = Project::SIZE_CLIENT_SOCKET_BUFFER;
+        $this->_configs['swoole']['buffer_output_size'] = Project::SIZE_CLIENT_BUFFER_OUTPUT;
 
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
