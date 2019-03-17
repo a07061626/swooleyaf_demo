@@ -6,6 +6,7 @@ class IndexController extends CommonController {
 
     /**
      * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
+     * @SyFilter-{"field": "tag","explain": "标识","type": "string","rules": {"min": 1,"required": 1}}
      */
     public function indexAction(){
         $this->SyResult->setData([
