@@ -13,6 +13,7 @@ use Constant\Server;
 use Request\RequestSign;
 use Response\Result;
 use Response\SyResponseHttp;
+use Tool\SyPack;
 use Tool\Tool;
 use Traits\HttpServerTrait;
 use Traits\PreProcessHttpFrameTrait;
@@ -41,6 +42,10 @@ class HttpServer extends BaseServer {
      * @var array
      */
     private $_reqCookieDomains = [];
+    /**
+     * @var \Tool\SyPack
+     */
+    private $_messagePack = null;
     /**
      * HTTP响应
      * @var \swoole_http_response
@@ -87,6 +92,7 @@ class HttpServer extends BaseServer {
         $this->_cors = Tool::getConfig('cors.' . SY_ENV . SY_PROJECT);
         $this->_cors['allow']['headerStr'] = isset($this->_cors['allow']['headers']) ? implode(', ', $this->_cors['allow']['headers']) : '';
         $this->_cors['allow']['methodStr'] = isset($this->_cors['allow']['methods']) ? implode(', ', $this->_cors['allow']['methods']) : '';
+        $this->_messagePack = new SyPack();
         $this->_reqCookieDomains = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.domain.cookie');
 
         $this->checkServerHttp();
@@ -108,6 +114,8 @@ class HttpServer extends BaseServer {
             'request' => 'onRequest',
             'message' => 'onMessage',
             'close' => 'onClose',
+            'task' => 'onTask',
+            'finish' => 'onFinish',
         ]);
     }
 
@@ -343,6 +351,34 @@ class HttpServer extends BaseServer {
 
     public function onWorkerStart(\swoole_server $server, $workerId){
         $this->basicWorkStart($server, $workerId);
+
+        if($workerId == 0){
+            $this->addTaskBase($server);
+            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_CLEAR_API_SIGN_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataSign = $this->_messagePack->packData();
+            $this->_messagePack->init();
+
+            $server->tick(Project::TIME_TASK_CLEAR_API_SIGN, function() use ($server, $taskDataSign) {
+                $server->task($taskDataSign);
+            });
+
+            $this->_messagePack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_REFRESH_TOKEN_EXPIRE,
+                'task_params' => [],
+            ]);
+            $taskDataToken = $this->_messagePack->packData();
+            $this->_messagePack->init();
+
+            $server->tick(Project::TIME_TASK_REFRESH_TOKEN_EXPIRE, function() use ($server, $taskDataToken) {
+                $server->task($taskDataToken);
+            });
+            $this->addTaskHttpTrait($server);
+        }
     }
 
     public function onWorkerStop(\swoole_server $server, int $workerId){
@@ -378,6 +414,31 @@ class HttpServer extends BaseServer {
      */
     public function onMessage(\swoole_websocket_server $server,\swoole_websocket_frame $frame) {
         $server->push($frame->fd, "this is server");
+    }
+
+    public function onTask(\swoole_server $server, int $taskId, int $fromId, string $data){
+        $baseRes = $this->handleTaskBase($server, $taskId, $fromId, $data);
+        if(is_array($baseRes)){
+            $taskCommand = Tool::getArrayVal($baseRes['params'], 'task_command', '');
+            switch ($taskCommand) {
+                case Project::TASK_TYPE_CLEAR_API_SIGN_CACHE:
+                    $this->clearApiSign();
+                    break;
+                default:
+                    $traitRes = $this->handleTaskHttpTrait($server, $taskId, $fromId, $baseRes);
+                    if(strlen($traitRes) > 0){
+                        return $traitRes;
+                    }
+            }
+
+            $result = new Result();
+            $result->setData([
+                'result' => 'success',
+            ]);
+            return $result->getJson();
+        } else {
+            return $baseRes;
+        }
     }
 
     /**

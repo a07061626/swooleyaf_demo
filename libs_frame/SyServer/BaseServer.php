@@ -15,6 +15,7 @@ use Exception\Validator\ValidatorException;
 use Log\Log;
 use Response\Result;
 use Tool\Dir;
+use Tool\SyPack;
 use Tool\Tool;
 use Traits\BaseServerTrait;
 use Traits\Server\BasicBaseTrait;
@@ -59,6 +60,20 @@ abstract class BaseServer {
      */
     protected $_app = null;
     /**
+     * @var \Tool\SyPack
+     */
+    protected $_syPack = null;
+    /**
+     * task进程数量
+     * @var int
+     */
+    protected $_taskNum = 0;
+    /**
+     * 最大task进程ID号
+     * @var int
+     */
+    protected $_taskMaxId = -1;
+    /**
      * 请求ID
      * @var string
      */
@@ -100,6 +115,12 @@ abstract class BaseServer {
         $this->_configs['swoole']['package_max_length'] = Project::SIZE_SERVER_PACKAGE_MAX;
         $this->_configs['swoole']['socket_buffer_size'] = Project::SIZE_CLIENT_SOCKET_BUFFER;
         $this->_configs['swoole']['buffer_output_size'] = Project::SIZE_CLIENT_BUFFER_OUTPUT;
+        $taskNum = isset($this->_configs['swoole']['task_worker_num']) ? (int)$this->_configs['swoole']['task_worker_num'] : 0;
+        if($taskNum < 2){
+            exit('Task进程的数量必须大于等于2' . PHP_EOL);
+        }
+        $this->_taskNum = $taskNum;
+        $this->_taskMaxId = $taskNum - 1;
 
         $this->_host = $this->_configs['server']['host'];
         $this->_port = $this->_configs['server']['port'];
@@ -116,6 +137,7 @@ abstract class BaseServer {
             fwrite($tipFileObj, '');
             fclose($tipFileObj);
         }
+        $this->_syPack = new SyPack();
 
         //生成服务唯一标识
         self::$_serverToken = hash('crc32b', $this->_configs['server']['host'] . ':' . $this->_configs['server']['port']);
@@ -164,6 +186,7 @@ abstract class BaseServer {
             'yaconf',
             'swoole',
             'SeasLog',
+            'msgpack',
         ];
         foreach ($extensionList as $extName) {
             if(!extension_loaded($extName)){
@@ -345,6 +368,100 @@ abstract class BaseServer {
     }
 
     /**
+     * @param \swoole_server $server
+     * @param int $taskId
+     * @param int $fromId
+     * @param string $data
+     * @return array|string
+     */
+    protected function handleTaskBase(\swoole_server $server,int $taskId,int $fromId,string $data) {
+        $result = new Result();
+        if(!$this->_syPack->unpackData($data)){
+            $result->setCodeMsg(ErrorCode::COMMON_PARAM_ERROR, '数据格式不合法');
+            return $result->getJson();
+        }
+
+        $command = $this->_syPack->getCommand();
+        $commandData = $this->_syPack->getData();
+        $this->_syPack->init();
+
+        if(in_array($command, [SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, SyPack::COMMAND_TYPE_RPC_CLIENT_SEND_TASK_REQ])){
+            $taskCommand = Tool::getArrayVal($commandData, 'task_command', '');
+            switch ($taskCommand) {
+                case Project::TASK_TYPE_CLEAR_LOCAL_USER_CACHE:
+//                    $this->clearLocalUsers();
+                    break;
+                case Project::TASK_TYPE_CLEAR_LOCAL_WX_CACHE:
+//                    $this->clearWxCache();
+                    break;
+                default:
+                    $taskData = [
+                        'command' => $command,
+                        'params' => $commandData,
+                    ];
+                    $traitRes = $this->handleTaskBaseTrait($server, $taskId, $fromId, $taskData);
+                    if(strlen($traitRes) == 0){
+                        return $taskData;
+                    } else {
+                        return $traitRes;
+                    }
+            }
+
+            $result->setData([
+                'result' => 'success',
+            ]);
+        } else {
+            $result->setData([
+                'result' => 'fail',
+            ]);
+        }
+
+        return $result->getJson();
+    }
+
+    protected function addTaskBase(\swoole_server $server) {
+        if(SY_SERVER_TYPE == Server::SERVER_TYPE_API_MODULE){
+            $this->_syPack->setCommandAndData(SyPack::COMMAND_TYPE_RPC_CLIENT_SEND_TASK_REQ, [
+                'task_command' => Project::TASK_TYPE_CLEAR_LOCAL_USER_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataUser = $this->_syPack->packData();
+            $this->_syPack->init();
+
+            $this->_syPack->setCommandAndData(SyPack::COMMAND_TYPE_RPC_CLIENT_SEND_TASK_REQ, [
+                'task_command' => Project::TASK_TYPE_CLEAR_LOCAL_WX_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataWx = $this->_syPack->packData();
+            $this->_syPack->init();
+        } else {
+            $this->_syPack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_CLEAR_LOCAL_USER_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataUser = $this->_syPack->packData();
+            $this->_syPack->init();
+
+            $this->_syPack->setCommandAndData(SyPack::COMMAND_TYPE_SOCKET_CLIENT_SEND_TASK_REQ, [
+                'task_module' => SY_MODULE,
+                'task_command' => Project::TASK_TYPE_CLEAR_LOCAL_WX_CACHE,
+                'task_params' => [],
+            ]);
+            $taskDataWx = $this->_syPack->packData();
+            $this->_syPack->init();
+        }
+
+        $server->tick(Project::TIME_TASK_CLEAR_LOCAL_USER, function() use ($server, $taskDataUser) {
+            $server->task($taskDataUser);
+        });
+        $server->tick(Project::TIME_TASK_CLEAR_LOCAL_WX, function() use ($server, $taskDataWx) {
+            $server->task($taskDataWx);
+        });
+        $this->addTaskBaseTrait($server);
+    }
+
+    /**
      * 开启服务
      */
     abstract public function start();
@@ -490,6 +607,19 @@ abstract class BaseServer {
     }
 
     /**
+     * 任务完成
+     * @param \swoole_server $server
+     * @param int $taskId
+     * @param string $data
+     */
+    public function onFinish(\swoole_server $server, $taskId,string $data){
+        $dataArr = Tool::jsonDecode($data);
+        if ((!is_array($dataArr)) || ($dataArr['code'] > 0)) {
+            Log::info('handle task fail with msg:' . $data);
+        }
+    }
+
+    /**
      * 启动工作进程
      * @param \swoole_server $server
      * @param int $workerId 进程编号
@@ -510,4 +640,13 @@ abstract class BaseServer {
      * @param int $exitCode 退出状态码
      */
     abstract public function onWorkerError(\swoole_server $server, $workId, $workPid, $exitCode);
+    /**
+     * 处理任务
+     * @param \swoole_server $server
+     * @param int $taskId
+     * @param int $fromId
+     * @param string $data
+     * @return string
+     */
+    abstract public function onTask(\swoole_server $server,int $taskId,int $fromId,string $data);
 }

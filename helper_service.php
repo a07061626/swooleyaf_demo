@@ -1,6 +1,4 @@
 <?php
 require_once __DIR__ . '/helper_load.php';
 
-\Helper\ServiceRunner::run('a01api', [
-    'a01api',
-]);
+\Helper\ServiceRunner::run(\Constant\Project::MODULE_NAME_API, \Constant\Project::$totalModuleName);
