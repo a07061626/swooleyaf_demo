@@ -11,6 +11,27 @@ class Bootstrap extends \SyFrame\SimpleBootstrap {
     public function _initBoot(\Yaf\Dispatcher $dispatcher) {
         if(self::$firstTag){
             $this->universalInit($dispatcher);
+
+            //设置视图
+            $twigConfig = self::getAppConfigs('twig');
+            if(empty($twigConfig)){
+                throw new \Exception\Swoole\ServerException('twig配置不存在', \Constant\ErrorCode::TWIG_PARAM_ERROR);
+            }
+
+            $twigView = new \DesignPatterns\Adapters\TwigAdapter(APP_PATH . '/application/views/', $twigConfig);
+            $funcList = \TemplateExtension\Twig\ProjectFunction::getInstance()->getFunction();
+            foreach ($funcList as $eTag => $eFunc) {
+                $twigView->addFunction($eTag, $eFunc);
+            }
+            $dispatcher->setView($twigView);
+
+            //            $smartyConfig = self::getAppConfigs('smarty');
+            //            if(empty($smartyConfig)){
+            //                throw new \Exception\Swoole\ServerException('smarty配置不存在', \Constant\ErrorCode::SMARTY_PARAM_ERROR);
+            //            }
+            //
+            //            $smartyView = new \DesignPatterns\Adapters\SmartyAdapter(null, $smartyConfig);
+            //            $dispatcher->setView($smartyView);
             self::$firstTag = false;
         }
     }
