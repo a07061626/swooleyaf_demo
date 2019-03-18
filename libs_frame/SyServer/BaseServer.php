@@ -10,6 +10,7 @@ namespace SyServer;
 use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
+use Exception\Swoole\ServerException;
 use Exception\Validator\ValidatorException;
 use Log\Log;
 use Response\Result;
@@ -67,6 +68,11 @@ abstract class BaseServer {
      * @var string
      */
     protected static $_serverToken = '';
+    /**
+     * 请求开始毫秒级时间戳
+     * @var float
+     */
+    protected static $_reqStartTime = 0.0;
 
     public function __construct(int $port){
         if (($port <= 1024) || ($port > 65535)) {
@@ -76,6 +82,7 @@ abstract class BaseServer {
         $this->_configs = Tool::getConfig('syserver.' . SY_ENV . SY_MODULE);
 
         define('SY_SERVER_IP', $this->_configs['server']['host']);
+        define('SY_REQUEST_MAX_HANDLING', (int)$this->_configs['server']['request']['maxnum']['handling']);
 
         $this->_configs['server']['port'] = $port;
         //关闭协程
@@ -176,6 +183,17 @@ abstract class BaseServer {
     }
 
     protected function basicWorkStart(\swoole_server $server, $workerId){
+        //设置错误和异常处理
+        set_exception_handler('\SyError\ErrorHandler::handleException');
+        set_error_handler('\SyError\ErrorHandler::handleError');
+        //设置时区
+        date_default_timezone_set('PRC');
+        //禁止引用外部xml实体
+        libxml_disable_entity_loader(true);
+        //设置bc数学函数小数点保留位数
+        $bcConfigs = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.bcmath');
+        bcscale($bcConfigs['scale']);
+
         $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
         $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
         $this->_app->bootstrap()->getDispatcher()->autoRender(false);
@@ -266,6 +284,64 @@ abstract class BaseServer {
         }
 
         return $error;
+    }
+
+    /**
+     * 获取预处理函数
+     * @param string $uri
+     * @param array $frameMap
+     * @param array $projectMap
+     * @return bool|string
+     */
+    protected function getPreProcessFunction(string $uri,array $frameMap,array $projectMap) {
+        $funcName = '';
+        if(strlen($uri) == 5){
+            if (isset($frameMap[$uri])) {
+                $funcName = $frameMap[$uri];
+                if(strpos($funcName, 'preProcessFrame') !== 0){
+                    $funcName = false;
+                }
+            } else if(isset($projectMap[$uri])){
+                $funcName = $projectMap[$uri];
+                if(strpos($funcName, 'preProcessProject') !== 0){
+                    $funcName = false;
+                }
+            }
+        }
+
+        return $funcName;
+    }
+
+    /**
+     * 检查请求限流
+     * @throws \Exception\Swoole\ServerException
+     */
+    protected static function checkRequestCurrentLimit() {
+        $nowHandlingNum = self::$_syServer->incr(self::$_serverToken, 'request_handling', 1);
+        if($nowHandlingNum > SY_REQUEST_MAX_HANDLING){
+            throw new ServerException('服务繁忙', ErrorCode::COMMON_SERVER_BUSY);
+        }
+    }
+
+    /**
+     * 记录耗时长的请求
+     * @param string $uri 请求uri
+     * @param string|array $data 请求数据
+     * @param int $limitTime 限制时间,单位为毫秒
+     */
+    protected function reportLongTimeReq(string $uri, $data,int $limitTime) {
+        $handleTime = (int)((microtime(true) - self::$_reqStartTime) * 1000);
+        self::$_reqStartTime = 0;
+        if($handleTime > $limitTime){ //执行时间超过限制的请求记录到日志便于分析具体情况
+            $content = 'handle req use time ' . $handleTime . ' ms,uri:' . $uri . ',data:';
+            if(is_string($data)){
+                $content .= $data;
+            } else {
+                $content .= Tool::jsonEncode($data, JSON_UNESCAPED_UNICODE);
+            }
+
+            Log::warn($content);
+        }
     }
 
     /**
@@ -366,6 +442,11 @@ abstract class BaseServer {
         file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
 
         $config = Tool::getConfig('project.' . SY_ENV . SY_PROJECT);
+        Dir::create($config['dir']['store']['image']);
+        Dir::create($config['dir']['store']['music']);
+        Dir::create($config['dir']['store']['resources']);
+        Dir::create($config['dir']['store']['cache']);
+
         //为了防止定时任务出现重启服务的时候,导致重启期间(1-3s内)的定时任务无法处理,将定时器时间初始化为当前时间戳之前6秒
         $timerAdvanceTime = (int)Tool::getArrayVal($config, 'timer.time.advance', 6, true);
         $initTimerTime = time() - $timerAdvanceTime;

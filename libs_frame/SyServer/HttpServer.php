@@ -8,11 +8,15 @@
 namespace SyServer;
 
 use Constant\ErrorCode;
+use Constant\Project;
 use Constant\Server;
+use Request\RequestSign;
 use Response\Result;
 use Response\SyResponseHttp;
 use Tool\Tool;
 use Traits\HttpServerTrait;
+use Traits\PreProcessHttpFrameTrait;
+use Traits\PreProcessHttpProjectTrait;
 use Traits\Server\BasicHttpTrait;
 use Yaf\Registry;
 use Yaf\Request\Http;
@@ -20,6 +24,8 @@ use Yaf\Request\Http;
 class HttpServer extends BaseServer {
     use BasicHttpTrait;
     use HttpServerTrait;
+    use PreProcessHttpFrameTrait;
+    use PreProcessHttpProjectTrait;
 
     const RESPONSE_RESULT_TYPE_FORBIDDEN = 0; //响应结果类型-拒绝请求
     const RESPONSE_RESULT_TYPE_ACCEPT = 1; //响应结果类型-允许请求执行业务
@@ -137,6 +143,22 @@ class HttpServer extends BaseServer {
         $_SERVER[Server::SERVER_DATA_KEY_TIMESTAMP] = time();
     }
 
+    private function initRequest(\swoole_http_request $request,array $rspHeaders) {
+        self::$_reqStartTime = microtime(true);
+        self::$_syServer->incr(self::$_serverToken, 'request_times', 1);
+        $_GET = $request->get ?? [];
+        $_FILES = $request->files ?? [];
+        $_COOKIE = $request->cookie ?? [];
+        $GLOBALS['HTTP_RAW_POST_DATA'] = $request->rawContent();
+        $_POST[RequestSign::KEY_SIGN] = $_GET[RequestSign::KEY_SIGN] ?? '';
+        unset($_GET[RequestSign::KEY_SIGN]);
+        //注册全局信息
+        Registry::set(Server::REGISTRY_NAME_REQUEST_HEADER, self::$_reqHeaders);
+        Registry::set(Server::REGISTRY_NAME_REQUEST_SERVER, self::$_reqServers);
+        Registry::set(Server::REGISTRY_NAME_RESPONSE_HEADER, $rspHeaders);
+        Registry::set(Server::REGISTRY_NAME_RESPONSE_COOKIE, []);
+    }
+
     /**
      * 清理请求数据
      */
@@ -208,6 +230,117 @@ class HttpServer extends BaseServer {
         return self::RESPONSE_RESULT_TYPE_ACCEPT;
     }
 
+    /**
+     * 处理请求业务
+     * @param \swoole_http_request $request
+     * @param array $initRspHeaders 初始化响应头
+     * @return string
+     */
+    private function handleReqService(\swoole_http_request $request,array $initRspHeaders) : string {
+        $uri = Tool::getArrayVal(self::$_reqServers, 'request_uri', '/');
+        $uriCheckRes = $this->checkRequestUri($uri);
+        if(strlen($uriCheckRes['error']) > 0){
+            $error = new Result();
+            $error->setCodeMsg(ErrorCode::COMMON_ROUTE_URI_FORMAT_ERROR, $uriCheckRes['error']);
+            $result = $error->getJson();
+            unset($error);
+            return $result;
+        }
+        $uri = $uriCheckRes['uri'];
+        self::$_reqServers['request_uri'] = $uriCheckRes['uri'];
+
+        $funcName = $this->getPreProcessFunction($uri, $this->preProcessMapFrame, $this->preProcessMapProject);
+        if(is_bool($funcName)){
+            $error = new Result();
+            $error->setCodeMsg(ErrorCode::COMMON_SERVER_ERROR, '预处理函数命名不合法');
+            $result = $error->getJson();
+            unset($error);
+            return $result;
+        } else if(strlen($funcName) > 0){
+            return $this->$funcName($request);
+        }
+
+        $this->initRequest($request, $initRspHeaders);
+
+        $error = null;
+        $result = '';
+        $httpObj = new Http($uri);
+        try {
+            self::checkRequestCurrentLimit();
+            $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
+            if(strlen($result) == 0){
+                $error = new Result();
+                $error->setCodeMsg(ErrorCode::SWOOLE_SERVER_NO_RESPONSE_ERROR, '未设置响应数据');
+            }
+        } catch (\Exception $e){
+            SyResponseHttp::header('Content-Type', 'application/json; charset=utf-8');
+            if(SY_REQ_EXCEPTION_HANDLE_TYPE){
+                $error = $this->handleReqExceptionByFrame($e);
+            } else {
+                $error = $this->handleReqExceptionByProject($e);
+            }
+        } finally {
+            self::$_syServer->decr(self::$_serverToken, 'request_handling', 1);
+            $this->reportLongTimeReq($uri, array_merge($_GET, $_POST), Project::TIME_EXPIRE_SWOOLE_CLIENT_HTTP);
+            unset($httpObj);
+            if(is_object($error)){
+                $result = $error->getJson();
+                unset($error);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * 设置响应头信息
+     * @param \swoole_http_response $response
+     * @param array|bool $headers
+     */
+    private function setRspHeaders(\swoole_http_response $response, $headers) {
+        if(is_array($headers)){
+            if(!isset($headers['Content-Type'])){
+                $response->header('Content-Type', 'application/json; charset=utf-8');
+            }
+
+            foreach ($headers as $headerName => $headerVal) {
+                $response->header($headerName, $headerVal);
+            }
+
+            if(isset($headers['Location'])){
+                $response->status(302);
+            } else if(isset($headers['Syresp-Status'])){
+                $response->status($headers['Syresp-Status']);
+            }
+        } else {
+            $response->header('Access-Control-Allow-Origin', '*');
+            $response->header('Content-Type', 'application/json; charset=utf-8');
+        }
+    }
+
+    /**
+     * 设置响应cookie信息
+     * @param \swoole_http_response $response
+     * @param array|bool $cookies
+     */
+    private function setRspCookies(\swoole_http_response $response, $cookies) {
+        if(is_array($cookies)){
+            foreach ($cookies as $cookie) {
+                if(is_array($cookie) && isset($cookie['key'])
+                   && (is_string($cookie['key']) || is_numeric($cookie['key']))){
+                    $cookieName = preg_replace('/[^0-9a-zA-Z\-\_]+/', '', $cookie['key']);
+                    $value = Tool::getArrayVal($cookie, 'value', null);
+                    $expires = Tool::getArrayVal($cookie, 'expires', 0);
+                    $path = Tool::getArrayVal($cookie, 'path', '/');
+                    $domain = Tool::getArrayVal($cookie, 'domain', '');
+                    $secure = Tool::getArrayVal($cookie, 'secure', false);
+                    $httpOnly = Tool::getArrayVal($cookie, 'httponly', false);
+                    $response->cookie($cookieName, $value, $expires, $path, $domain, $secure, $httpOnly);
+                }
+            }
+        }
+    }
+
     public function onWorkerStart(\swoole_server $server, $workerId){
         $this->basicWorkStart($server, $workerId);
     }
@@ -218,6 +351,15 @@ class HttpServer extends BaseServer {
 
     public function onWorkerError(\swoole_server $server, $workId, $workPid, $exitCode){
         $this->basicWorkError($server, $workId, $workPid, $exitCode);
+
+        if (self::$_response) {
+            $this->setRspCookies(self::$_response, Registry::get(Server::REGISTRY_NAME_RESPONSE_COOKIE));
+            $this->setRspHeaders(self::$_response, Registry::get(Server::REGISTRY_NAME_RESPONSE_HEADER));
+
+            $json = new Result();
+            $json->setCodeMsg(ErrorCode::COMMON_SERVER_ERROR, ErrorCode::getMsg(ErrorCode::COMMON_SERVER_ERROR));
+            self::$_response->end($json->getJson());
+        }
     }
 
     /**
@@ -264,7 +406,7 @@ class HttpServer extends BaseServer {
             }
         } else {
             self::$_syServer->incr(self::$_serverToken, 'request_times', 1);
-//            $this->_server->task(self::$_reqTask, random_int(1, $this->_taskMaxId));
+            $this->_server->task(self::$_reqTask, random_int(1, $this->_taskMaxId));
             $result = new Result();
             $result->setData([
                 'msg' => 'task received',
@@ -275,42 +417,5 @@ class HttpServer extends BaseServer {
 
         $response->end(self::$_rspMsg);
         $this->clearRequest();
-//        $uri = Tool::getArrayVal($request->server, 'request_uri', '/');
-//        $uriCheckRes = $this->checkRequestUri($uri);
-//        if(strlen($uriCheckRes['error']) > 0){
-//            $error = new Result();
-//            $error->setCodeMsg(ErrorCode::COMMON_ROUTE_URI_FORMAT_ERROR, $uriCheckRes['error']);
-//            $result = $error->getJson();
-//            unset($error);
-//            return $result;
-//        }
-//        $uri = $uriCheckRes['uri'];
-//
-//        $error = null;
-//        $result = '';
-//        $httpObj = new Http($uri);
-//
-//        try {
-//            $result = $this->_app->bootstrap()->getDispatcher()->dispatch($httpObj)->getBody();
-//            if(strlen($result) == 0){
-//                $error = new Result();
-//                $error->setCodeMsg(ErrorCode::SWOOLE_SERVER_NO_RESPONSE_ERROR, '未设置响应数据');
-//            }
-//        } catch (\Exception $e){
-//            SyResponseHttp::header('Content-Type', 'application/json; charset=utf-8');
-//            if(SY_REQ_EXCEPTION_HANDLE_TYPE){
-//                $error = $this->handleReqExceptionByFrame($e);
-//            } else {
-//                $error = $this->handleReqExceptionByProject($e);
-//            }
-//        } finally {
-//            unset($httpObj);
-//            if(is_object($error)){
-//                $result = $error->getJson();
-//                unset($error);
-//            }
-//        }
-//
-//        $response->end($result);
     }
 }
