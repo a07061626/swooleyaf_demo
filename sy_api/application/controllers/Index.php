@@ -21,7 +21,7 @@ class IndexController extends CommonController {
      */
     public function test2Action() {
         \Response\SyResponseHttp::header('Content-Type', 'text/html; charset=utf-8');
-        $renderRes = $this->getView()->render('index.tpl', [
+        $renderRes = $this->getView()->render('index/index.html', [
             'aaa' => 'xxdd',
         ]);
 
