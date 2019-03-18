@@ -226,6 +226,21 @@ abstract class BaseServer {
         } else {
             @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
         }
+
+        if($workerId == 0){ //保证每一个服务只执行一次定时任务
+            $modules = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules');
+            foreach (Project::$totalModuleBase as $eModuleName) {
+                $moduleData = Tool::getArrayVal($modules, $eModuleName, []);
+                if (!empty($moduleData)) {
+                    self::$_syServices->set($eModuleName, [
+                        'module' => $eModuleName,
+                        'host' => $moduleData['host'],
+                        'port' => (string)$moduleData['port'],
+                        'type' => $moduleData['type'],
+                    ]);
+                }
+            }
+        }
     }
 
     protected function basicWorkStop(\swoole_server $server,int $workId) {
