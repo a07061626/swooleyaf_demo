@@ -45,7 +45,11 @@ class ServiceRunner {
         }
         $truePort = (int)$port;
 
-        $server = new HttpServer($truePort);
+        if($moduleName == $apiName){
+            $server = new HttpServer($truePort);
+        } else {
+            $server = new RpcServer($truePort);
+        }
 
         $action = Tool::getClientOption('-s', false, 'start');
         switch ($action) {
