@@ -15,4 +15,16 @@ class IndexController extends CommonController {
 
         $this->sendRsp();
     }
+
+    /**
+     * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
+     */
+    public function test2Action() {
+        \Response\SyResponseHttp::header('Content-Type', 'text/html; charset=utf-8');
+        $renderRes = $this->getView()->render('index.tpl', [
+            'aaa' => 'xxdd',
+        ]);
+
+        $this->sendRsp($renderRes);
+    }
 }
