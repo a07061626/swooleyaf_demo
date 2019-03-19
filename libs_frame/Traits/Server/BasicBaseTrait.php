@@ -7,6 +7,8 @@
  */
 namespace Traits\Server;
 
+use DesignPatterns\Singletons\RedisSingleton;
+
 trait BasicBaseTrait {
     /**
      * 服务配置信息表
@@ -26,6 +28,9 @@ trait BasicBaseTrait {
         } else if (($numModules & ($numModules - 1)) != 0) {
             exit('服务模块缓存数量必须是2的指数倍');
         }
+
+        //检测redis服务是否启动
+        RedisSingleton::getInstance()->checkConn();
 
         $this->checkServerBaseTrait();
     }

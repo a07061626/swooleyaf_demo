@@ -27,6 +27,10 @@ class ErrorCode {
     const COMMON_ROUTE_CONTROLLER_NOT_EXIST = 11002;
     const COMMON_ROUTE_ACTION_NOT_EXIST = 11003;
 
+    //REDIS错误,取值范围:100600-100799
+    const REDIS_CONNECTION_ERROR = 100600;
+    const REDIS_AUTH_ERROR = 100601;
+
     //SWOOLE错误,取值范围:100800-100999
     const SWOOLE_SERVER_PARAM_ERROR = 100800;
     const SWOOLE_SERVER_NOT_EXIST_ERROR = 100801;
@@ -60,6 +64,8 @@ class ErrorCode {
         self::SWOOLE_SERVER_PARAM_ERROR => 'SWOOLE服务参数错误',
         self::SWOOLE_SERVER_NOT_EXIST_ERROR => 'SWOOLE服务不存在',
         self::SWOOLE_SERVER_NO_RESPONSE_ERROR => 'SWOOLE服务未设置响应数据',
+        self::REDIS_CONNECTION_ERROR => 'REDIS连接出错',
+        self::REDIS_AUTH_ERROR => 'REDIS鉴权失败',
         self::REFLECT_RESOURCE_NOT_EXIST => '反射资源不存在',
         self::REFLECT_ANNOTATION_DATA_ERROR => '注解数据不正确',
         self::SIGN_ERROR => '签名值错误',

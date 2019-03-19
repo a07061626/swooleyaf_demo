@@ -103,6 +103,7 @@ abstract class SimpleBootstrap extends Bootstrap_Abstract {
                    ->setDefaultController(SY_DEFAULT_CONTROLLER)
                    ->setDefaultAction(SY_DEFAULT_ACTION)
                    ->registerPlugin(new MethodExistPlugin())
+                   ->registerPlugin(new CheckConnectPlugin())
                    ->registerPlugin(new ValidatorPlugin())
                    ->registerPlugin(new FinishServicePlugin())
                    ->registerPlugin(new ActionLogPlugin());

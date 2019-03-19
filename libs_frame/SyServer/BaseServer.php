@@ -10,6 +10,8 @@ namespace SyServer;
 use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
+use DesignPatterns\Factories\CacheSimpleFactory;
+use DesignPatterns\Singletons\RedisSingleton;
 use Exception\Swoole\ServerException;
 use Exception\Validator\ValidatorException;
 use Log\Log;
@@ -184,6 +186,7 @@ abstract class BaseServer {
             'PDO',
             'pcre',
             'pcntl',
+            'redis',
             'yaconf',
             'swoole',
             'SeasLog',
@@ -400,6 +403,8 @@ abstract class BaseServer {
             return $result->getJson();
         }
 
+        RedisSingleton::getInstance()->reConnect();
+
         $command = $this->_syPack->getCommand();
         $commandData = $this->_syPack->getData();
         $this->_syPack->init();
@@ -599,6 +604,18 @@ abstract class BaseServer {
             'token_etime' => time() + 7200,
             'unique_num' => 100000000,
         ]);
+
+        //设置唯一ID自增基数
+        $num = (int)CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
+        if($num < 100000000){
+            $randomNum = random_int(100000000, 150000000);
+            if(!CacheSimpleFactory::getRedisInstance()->set(Project::DATA_KEY_CACHE_UNIQUE_ID, $randomNum)){
+                throw new ServerException('设置唯一ID自增基数出错', ErrorCode::SWOOLE_SERVER_PARAM_ERROR);
+            };
+        } else if($num > 500000000){
+            $reduceNum = $num - 100000000 - ($num % 100000000);
+            CacheSimpleFactory::getRedisInstance()->decrBy(Project::DATA_KEY_CACHE_UNIQUE_ID, $reduceNum);
+        }
     }
 
     /**

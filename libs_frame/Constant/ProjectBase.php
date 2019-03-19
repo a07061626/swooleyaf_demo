@@ -75,4 +75,13 @@ class ProjectBase {
     const TASK_TYPE_CLEAR_LOCAL_WX_CACHE = '0003'; //任务类型-清除本地微信缓存
     const TASK_TYPE_TIME_WHEEL_TASK = '0004'; //任务类型-时间轮任务
     const TASK_TYPE_REFRESH_TOKEN_EXPIRE = '0005'; //任务类型-刷新令牌到期时间
+
+    //数据常量
+    const DATA_KEY_SESSION_TOKEN = 'sytoken'; //键名-session标识
+    const DATA_KEY_CACHE_UNIQUE_ID = self::REDIS_PREFIX_UNIQUE_ID . 'uniqueid'; //键名-缓存唯一ID
+
+    //REDIS常量 后五位全数字的前缀为框架内部前缀
+    const REDIS_PREFIX_SESSION = 'sy' . SY_PROJECT . '00001_'; //前缀-session
+    const REDIS_PREFIX_SESSION_LIST = 'sy' . SY_PROJECT . '00002_'; //前缀-session列表
+    const REDIS_PREFIX_UNIQUE_ID = 'sy' . SY_PROJECT . '00003_'; //前缀-唯一ID
 }

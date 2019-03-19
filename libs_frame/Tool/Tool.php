@@ -7,7 +7,9 @@
  */
 namespace Tool;
 
+use Constant\Project;
 use Constant\Server;
+use DesignPatterns\Factories\CacheSimpleFactory;
 use Traits\SimpleTrait;
 
 class Tool {
@@ -266,5 +268,14 @@ class Tool {
         } else {
             return msgpack_unpack($data, $className);
         }
+    }
+
+    /**
+     * 生成唯一ID
+     * @return string
+     */
+    public static function createUniqueId() : string {
+        $num = CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
+        return date('YmdHis') . substr($num, -8);
     }
 }
