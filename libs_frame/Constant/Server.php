@@ -64,4 +64,17 @@ final class Server {
     const ENV_SYSTEM_BSD = 'FreeBSD'; //系统环境-bsd
     const ENV_SYSTEM_MAC = 'Darwin'; //系统环境-mac
     const ENV_SYSTEM_LINUX = 'Linux'; //系统环境-linux
+
+    //YAC常量,以0000开头的前缀为框架内部前缀,并键名总长度不超过48个字符串
+    const YAC_PREFIX_FUSE = '0000'; //前缀-熔断器
+
+    //熔断器常量
+    const FUSE_STATE_OPEN = 'open'; //状态-开启
+    const FUSE_STATE_CLOSED = 'closed'; //状态-关闭
+    const FUSE_STATE_HALF_OPEN = 'half_open'; //状态-半开
+    const FUSE_TIME_ERROR_STAT = 15; //错误统计间隔时间,单位为秒
+    const FUSE_TIME_OPEN_KEEP = 10; //开启状态保持时间,单位为秒
+    const FUSE_NUM_REQUEST_ERROR = 20; //请求出错次数
+    const FUSE_NUM_HALF_REQUEST_SUCCESS = 10; //半开状态请求成功次数
+    const FUSE_MSG_REQUEST_ERROR = '{"code":10001,"data":[],"msg":"服务繁忙,请稍后重试"}'; //请求出错提示消息
 }
