@@ -11,6 +11,7 @@ use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
 use DesignPatterns\Factories\CacheSimpleFactory;
+use DesignPatterns\Singletons\MysqlSingleton;
 use DesignPatterns\Singletons\RedisSingleton;
 use Exception\Swoole\ServerException;
 use Exception\Validator\ValidatorException;
@@ -404,6 +405,9 @@ abstract class BaseServer {
         }
 
         RedisSingleton::getInstance()->reConnect();
+        if(SY_DATABASE){
+            MysqlSingleton::getInstance()->reConnect();
+        }
 
         $command = $this->_syPack->getCommand();
         $commandData = $this->_syPack->getData();

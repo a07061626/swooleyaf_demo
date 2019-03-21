@@ -17,6 +17,10 @@ if(substr($syLogPath, -1) == '/'){
 }
 unset($syLogPath);
 
+//是否连接数据库
+if(!defined('SY_DATABASE')){
+    define('SY_DATABASE', true);
+}
 //请求异常处理类型 true:框架处理 false:项目处理
 if(!defined('SY_REQ_EXCEPTION_HANDLE_TYPE')){
     define('SY_REQ_EXCEPTION_HANDLE_TYPE', true);

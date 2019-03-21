@@ -27,6 +27,14 @@ class ErrorCode {
     const COMMON_ROUTE_CONTROLLER_NOT_EXIST = 11002;
     const COMMON_ROUTE_ACTION_NOT_EXIST = 11003;
 
+    //MYSQL错误,取值范围:100400-100599
+    const MYSQL_CONNECTION_ERROR = 100400;
+    const MYSQL_INSERT_ERROR = 100401;
+    const MYSQL_DELETE_ERROR = 100402;
+    const MYSQL_UPDATE_ERROR = 100403;
+    const MYSQL_SELECT_ERROR = 100404;
+    const MYSQL_UPSERT_ERROR = 100405;
+
     //REDIS错误,取值范围:100600-100799
     const REDIS_CONNECTION_ERROR = 100600;
     const REDIS_AUTH_ERROR = 100601;
@@ -61,6 +69,12 @@ class ErrorCode {
         self::COMMON_ROUTE_URI_FORMAT_ERROR => '路由格式错误',
         self::COMMON_ROUTE_CONTROLLER_NOT_EXIST => '控制器不存在',
         self::COMMON_ROUTE_ACTION_NOT_EXIST => '方法不存在',
+        self::MYSQL_CONNECTION_ERROR => 'MYSQL连接出错',
+        self::MYSQL_INSERT_ERROR => 'MYSQL添加数据出错',
+        self::MYSQL_UPDATE_ERROR => 'MYSQL修改数据出错',
+        self::MYSQL_DELETE_ERROR => 'MYSQL删除数据出错',
+        self::MYSQL_SELECT_ERROR => 'MYSQL查询数据出错',
+        self::MYSQL_UPSERT_ERROR => 'MYSQL修改或添加数据出错',
         self::SWOOLE_SERVER_PARAM_ERROR => 'SWOOLE服务参数错误',
         self::SWOOLE_SERVER_NOT_EXIST_ERROR => 'SWOOLE服务不存在',
         self::SWOOLE_SERVER_NO_RESPONSE_ERROR => 'SWOOLE服务未设置响应数据',
