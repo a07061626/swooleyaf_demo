@@ -9,7 +9,7 @@ namespace Traits;
 
 trait ProcessPoolFrameTrait {
     private function checkPoolFrame() {
-        if ($this->_configs['num']['backlog'] < 1024) {
+        if ($this->_configs['process']['num']['backlog'] < 1024) {
             exit('监听队列长度不能小于1024' . PHP_EOL);
         }
     }
