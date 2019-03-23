@@ -130,6 +130,10 @@ class ProcessPoolServer {
         $this->initTableProject();
 
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
+        echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m' . PHP_EOL;
+        \swoole_process::daemon(true, false);
+        $pid = getmypid();
+        file_put_contents($this->_pidFile, $pid);
         $this->pool = new \swoole_process_pool($this->_configs['process']['num']['worker'], SWOOLE_IPC_SOCKET);
         $this->pool->on('workerStart', [$this, 'onWorkerStart']);
         $this->pool->on('workerStop', [$this, 'onWorkerStop']);
@@ -139,9 +143,6 @@ class ProcessPoolServer {
         $errNo = swoole_errno();
         if($errNo == 0){
             echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m' . PHP_EOL;
-            \swoole_process::daemon(true, false);
-            $pid = getmypid();
-            file_put_contents($this->_pidFile, $pid);
         } else {
             echo 'start fail reason:' . swoole_strerror($errNo) . PHP_EOL;
             echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m' . PHP_EOL;
