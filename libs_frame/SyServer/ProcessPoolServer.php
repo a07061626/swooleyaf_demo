@@ -40,6 +40,11 @@ class ProcessPoolServer {
      */
     private $_pidFile = '';
     /**
+     * 提示文件
+     * @var string
+     */
+    protected $_tipFile = '';
+    /**
      * 配置数组
      * @var array
      */
@@ -59,9 +64,21 @@ class ProcessPoolServer {
         $this->_configs['process']['port'] = $port;
 
         Dir::create(SY_ROOT . '/pidfile/');
+        Dir::create(SY_ROOT . '/tipfile/');
         $this->_host = $this->_configs['process']['host'];
         $this->_port = $this->_configs['process']['port'];
         $this->_pidFile = SY_ROOT . '/pidfile/' . SY_MODULE . $this->_port . '.pid';
+        $this->_tipFile = SY_ROOT . '/tipfile/' . SY_MODULE . $this->_port . '.txt';
+        if(is_dir($this->_tipFile)){
+            exit('提示文件不能是文件夹' . PHP_EOL);
+        } else if(!file_exists($this->_tipFile)){
+            $tipFileObj = fopen($this->_tipFile, 'wb');
+            if(is_bool($tipFileObj)){
+                exit('创建或打开提示文件失败' . PHP_EOL);
+            }
+            fwrite($tipFileObj, '');
+            fclose($tipFileObj);
+        }
 
         //设置日志目录
         Log::setPath(SY_LOG_PATH);
@@ -130,10 +147,8 @@ class ProcessPoolServer {
         $this->initTableProject();
 
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
-        echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m' . PHP_EOL;
         \swoole_process::daemon(true, false);
-        $pid = getmypid();
-        file_put_contents($this->_pidFile, $pid);
+
         $this->pool = new \swoole_process_pool($this->_configs['process']['num']['worker'], SWOOLE_IPC_SOCKET);
         $this->pool->on('workerStart', [$this, 'onWorkerStart']);
         $this->pool->on('workerStop', [$this, 'onWorkerStop']);
@@ -142,10 +157,12 @@ class ProcessPoolServer {
         $this->pool->start();
         $errNo = swoole_errno();
         if($errNo == 0){
-            echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m' . PHP_EOL;
+            file_put_contents($this->_pidFile, getmypid());
+            file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
         } else {
-            echo 'start fail reason:' . swoole_strerror($errNo) . PHP_EOL;
-            echo '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m' . PHP_EOL;
+            Log::info('pool server start fail reason:' . swoole_strerror($errNo));
+            file_put_contents($this->_pidFile, '');
+            file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
         }
     }
 
@@ -164,6 +181,22 @@ class ProcessPoolServer {
             file_put_contents($this->_pidFile, '');
         }
         system('echo -e "\e[1;36m stop ' . SY_MODULE . ': \e[0m' . $msg . ' \e[0m"');
+        exit();
+    }
+
+    /**
+     * 获取服务启动状态
+     */
+    public function getStartStatus(){
+        $fileContent = file_get_contents($this->_tipFile);
+        $command = 'echo -e "\e[1;31m ' . SY_MODULE . ' start status fail \e[0m"';
+        if(is_string($fileContent)){
+            if(strlen($fileContent) > 0){
+                $command = 'echo -e "' . $fileContent . '"';
+            }
+            file_put_contents($this->_tipFile, '');
+        }
+        system($command);
         exit();
     }
     
