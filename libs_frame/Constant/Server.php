@@ -64,6 +64,8 @@ final class Server {
     const ENV_SYSTEM_BSD = 'FreeBSD'; //系统环境-bsd
     const ENV_SYSTEM_MAC = 'Darwin'; //系统环境-mac
     const ENV_SYSTEM_LINUX = 'Linux'; //系统环境-linux
+    const ENV_PORT_MIN = 1024; //端口-最小
+    const ENV_PORT_MAX = 65535; //端口-最大
 
     //YAC常量,以0000开头的前缀为框架内部前缀,并键名总长度不超过48个字符串
     const YAC_PREFIX_FUSE = '0000'; //前缀-熔断器
