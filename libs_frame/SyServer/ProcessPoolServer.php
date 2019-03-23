@@ -54,12 +54,6 @@ class ProcessPoolServer {
         if (($port <= Server::ENV_PORT_MIN) || ($port > Server::ENV_PORT_MAX)) {
             exit('端口不合法' . PHP_EOL);
         }
-        $execRes = Tool::execSystemCommand('lsof -i:' . $port);
-        if($execRes['code'] > 0){
-            exit($execRes['msg'] . PHP_EOL);
-        } else if(!empty($execRes['data'])){
-            exit('端口被占用' . PHP_EOL);
-        }
         $this->checkSystemEnv();
         $this->_configs = Tool::getConfig('sypool.' . SY_ENV . SY_MODULE);
         $this->checkPoolFrame();
@@ -149,6 +143,13 @@ class ProcessPoolServer {
     }
 
     public function start(){
+        $execRes = Tool::execSystemCommand('lsof -i:' . $this->_port);
+        if($execRes['code'] > 0){
+            exit($execRes['msg'] . PHP_EOL);
+        } else if(!empty($execRes['data'])){
+            exit('端口被占用' . PHP_EOL);
+        }
+
         $this->initTableFrame();
         $this->initTableProject();
 

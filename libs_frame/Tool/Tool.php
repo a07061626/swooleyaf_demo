@@ -278,25 +278,4 @@ class Tool {
         $num = CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
         return date('YmdHis') . substr($num, -8);
     }
-
-    /**
-     * 检测端口绑定
-     * @param string $host 域名
-     * @param int $port 端口
-     * @return array
-     */
-    public static function checkPortBind(string $host,int $port) : array {
-        $errNo = 0;
-        $errStr = '';
-        $socket = stream_socket_server('tcp://' . $host . ':' . $port, $errNo, $errStr);
-        if($socket){
-            fclose($socket);
-            unset($socket);
-        }
-
-        return [
-            'err_no' => $errNo,
-            'err_msg' => $errStr,
-        ];
-    }
 }
