@@ -148,6 +148,8 @@ class ProcessPoolServer {
 
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
         \swoole_process::daemon(true, false);
+        file_put_contents($this->_pidFile, getmypid());
+        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
 
         $this->pool = new \swoole_process_pool($this->_configs['process']['num']['worker'], SWOOLE_IPC_SOCKET);
         $this->pool->on('workerStart', [$this, 'onWorkerStart']);
@@ -155,15 +157,6 @@ class ProcessPoolServer {
         $this->pool->on('message', [$this, 'onMessage']);
         $this->pool->listen($this->_host, $this->_port, $this->_configs['process']['num']['backlog']);
         $this->pool->start();
-        $errNo = swoole_errno();
-        if($errNo == 0){
-            file_put_contents($this->_pidFile, getmypid());
-            file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
-        } else {
-            Log::info('pool server start fail reason:' . swoole_strerror($errNo));
-            file_put_contents($this->_pidFile, '');
-            file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;31m \t[fail] \e[0m');
-        }
     }
 
     public function stop(){
@@ -202,6 +195,10 @@ class ProcessPoolServer {
     
     public function onWorkerStart(\swoole_process_pool $pool,int $workerId){
         @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
+
+        if($workerId == 0){
+            file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
+        }
     }
 
     public function onWorkerStop(\swoole_process_pool $pool,int $workerId){
