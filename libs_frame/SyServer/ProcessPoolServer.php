@@ -130,11 +130,11 @@ class ProcessPoolServer {
         $this->initTableProject();
 
         @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
-        $this->pool = new \swoole_process_pool($this->_configs['num']['worker'], SWOOLE_IPC_SOCKET);
+        $this->pool = new \swoole_process_pool($this->_configs['process']['num']['worker'], SWOOLE_IPC_SOCKET);
         $this->pool->on('workerStart', [$this, 'onWorkerStart']);
         $this->pool->on('workerStop', [$this, 'onWorkerStop']);
         $this->pool->on('message', [$this, 'onMessage']);
-        $this->pool->listen($this->_host, $this->_port, $this->_configs['num']['backlog']);
+        $this->pool->listen($this->_host, $this->_port, $this->_configs['process']['num']['backlog']);
         $this->pool->start();
         $errNo = swoole_errno();
         if($errNo == 0){
