@@ -56,6 +56,10 @@ class ProcessPoolServer {
         }
         $this->checkSystemEnv();
         $this->_configs = Tool::getConfig('sypool.' . SY_ENV . SY_MODULE);
+        $bindRes = Tool::checkPortBind($this->_configs['process']['host'], $port);
+        if($bindRes['err_no'] > 0){
+            exit($bindRes['err_msg'] . PHP_EOL);
+        }
         $this->checkPoolFrame();
         $this->checkPoolProject();
 
