@@ -14,9 +14,9 @@ trait ProcessPoolFrameTrait {
         }
         $numBacklog = $this->_configs['process']['num']['backlog'];
         if ($numBacklog < 1) {
-            exit('监听队列长度不能小于1');
+            exit('监听队列长度不能小于1' . PHP_EOL);
         } else if (($numBacklog & ($numBacklog - 1)) != 0) {
-            exit('监听队列长度必须是2的指数倍');
+            exit('监听队列长度必须是2的指数倍' . PHP_EOL);
         }
     }
 
