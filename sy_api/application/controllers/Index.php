@@ -24,4 +24,20 @@ class IndexController extends CommonController {
 
         $this->sendRsp($renderRes);
     }
+
+    /**
+     * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
+     */
+    public function addShopAction(){
+        $addRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', []);
+        $this->sendRsp($addRes);
+    }
+
+    /**
+     * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
+     */
+    public function getShopListAction(){
+        $getRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', $_GET);
+        $this->sendRsp($getRes);
+    }
 }

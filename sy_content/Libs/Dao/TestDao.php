@@ -11,4 +11,12 @@ use Traits\SimpleDaoTrait;
 
 class TestDao {
     use SimpleDaoTrait;
+
+    public static function addShop(array $data){
+        return [];
+    }
+
+    public static function getShopList(array $data){
+        return [];
+    }
 }

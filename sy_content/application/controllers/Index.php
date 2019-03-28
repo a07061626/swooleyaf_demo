@@ -29,4 +29,14 @@ class IndexController extends CommonController {
 
         $this->sendRsp();
     }
+
+    public function addShopAction(){
+        $addRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', []);
+        $this->sendRsp($addRes);
+    }
+
+    public function getShopListAction(){
+        $getRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', $_GET);
+        $this->sendRsp($getRes);
+    }
 }

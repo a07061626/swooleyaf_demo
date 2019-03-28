@@ -213,41 +213,49 @@ abstract class BaseServer {
         }
     }
 
-    protected function basicWorkStart(\swoole_server $server, $workerId){
-        //设置错误和异常处理
-        set_exception_handler('\SyError\ErrorHandler::handleException');
-        set_error_handler('\SyError\ErrorHandler::handleError');
-        //设置时区
-        date_default_timezone_set('PRC');
-        //禁止引用外部xml实体
-        libxml_disable_entity_loader(true);
-        //设置bc数学函数小数点保留位数
-        $bcConfigs = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.bcmath');
-        bcscale($bcConfigs['scale']);
+    protected function basicStart(\swoole_server $server) {
+        @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
 
-        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
-        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
-        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
-
-        if($workerId >= $server->setting['worker_num']){
-            @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
-        } else {
-            @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
+        Dir::create(SY_ROOT . '/pidfile/');
+        if (file_put_contents($this->_pidFile, $server->master_pid) === false) {
+            Log::error('write ' . SY_MODULE . ' pid file error');
         }
 
-        if($workerId == 0){ //保证每一个服务只执行一次定时任务
-            $modules = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules');
-            foreach (Project::$totalModuleBase as $eModuleName) {
-                $moduleData = Tool::getArrayVal($modules, $eModuleName, []);
-                if (!empty($moduleData)) {
-                    self::$_syServices->set($eModuleName, [
-                        'module' => $eModuleName,
-                        'host' => $moduleData['host'],
-                        'port' => (string)$moduleData['port'],
-                        'type' => $moduleData['type'],
-                    ]);
-                }
-            }
+        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
+
+        $config = Tool::getConfig('project.' . SY_ENV . SY_PROJECT);
+        Dir::create($config['dir']['store']['image']);
+        Dir::create($config['dir']['store']['music']);
+        Dir::create($config['dir']['store']['resources']);
+        Dir::create($config['dir']['store']['cache']);
+
+        //为了防止定时任务出现重启服务的时候,导致重启期间(1-3s内)的定时任务无法处理,将定时器时间初始化为当前时间戳之前6秒
+        $timerAdvanceTime = (int)Tool::getArrayVal($config, 'timer.time.advance', 6, true);
+        $initTimerTime = time() - $timerAdvanceTime;
+        self::$_syServer->set(self::$_serverToken, [
+            'memory_usage' => memory_get_usage(),
+            'timer_time' => $initTimerTime,
+            'request_times' => 0,
+            'request_handling' => 0,
+            'host_local' => $this->_host,
+            'storepath_image' => $config['dir']['store']['image'],
+            'storepath_music' => $config['dir']['store']['music'],
+            'storepath_resources' => $config['dir']['store']['resources'],
+            'storepath_cache' => $config['dir']['store']['cache'],
+            'token_etime' => time() + 7200,
+            'unique_num' => 100000000,
+        ]);
+
+        //设置唯一ID自增基数
+        $num = (int)CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
+        if($num < 100000000){
+            $randomNum = random_int(100000000, 150000000);
+            if(!CacheSimpleFactory::getRedisInstance()->set(Project::DATA_KEY_CACHE_UNIQUE_ID, $randomNum)){
+                throw new ServerException('设置唯一ID自增基数出错', ErrorCode::SWOOLE_SERVER_PARAM_ERROR);
+            };
+        } else if($num > 500000000){
+            $reduceNum = $num - 100000000 - ($num % 100000000);
+            CacheSimpleFactory::getRedisInstance()->decrBy(Project::DATA_KEY_CACHE_UNIQUE_ID, $reduceNum);
         }
     }
 
@@ -572,53 +580,45 @@ abstract class BaseServer {
     }
 
     /**
-     * 启动主进程服务
+     * 启动工作进程
      * @param \swoole_server $server
-     * @throws \Exception\Swoole\ServerException
+     * @param int $workerId 进程编号
      */
-    public function onStart(\swoole_server $server) {
-        @cli_set_process_title(Server::PROCESS_TYPE_MAIN . SY_MODULE . $this->_port);
+    public function onWorkerStart(\swoole_server $server, $workerId) {
+        //设置错误和异常处理
+        set_exception_handler('\SyError\ErrorHandler::handleException');
+        set_error_handler('\SyError\ErrorHandler::handleError');
+        //设置时区
+        date_default_timezone_set('PRC');
+        //禁止引用外部xml实体
+        libxml_disable_entity_loader(true);
+        //设置bc数学函数小数点保留位数
+        $bcConfigs = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.bcmath');
+        bcscale($bcConfigs['scale']);
 
-        Dir::create(SY_ROOT . '/pidfile/');
-        if (file_put_contents($this->_pidFile, $server->master_pid) === false) {
-            Log::error('write ' . SY_MODULE . ' pid file error');
+        $this->_app = new Application(APP_PATH . '/conf/application.ini', SY_ENV);
+        $this->_app->bootstrap()->getDispatcher()->returnResponse(true);
+        $this->_app->bootstrap()->getDispatcher()->autoRender(false);
+
+        if($workerId >= $server->setting['worker_num']){
+            @cli_set_process_title(Server::PROCESS_TYPE_TASK . SY_MODULE . $this->_port);
+        } else {
+            @cli_set_process_title(Server::PROCESS_TYPE_WORKER . SY_MODULE . $this->_port);
         }
 
-        file_put_contents($this->_tipFile, '\e[1;36m start ' . SY_MODULE . ': \e[0m \e[1;32m \t[success] \e[0m');
-
-        $config = Tool::getConfig('project.' . SY_ENV . SY_PROJECT);
-        Dir::create($config['dir']['store']['image']);
-        Dir::create($config['dir']['store']['music']);
-        Dir::create($config['dir']['store']['resources']);
-        Dir::create($config['dir']['store']['cache']);
-
-        //为了防止定时任务出现重启服务的时候,导致重启期间(1-3s内)的定时任务无法处理,将定时器时间初始化为当前时间戳之前6秒
-        $timerAdvanceTime = (int)Tool::getArrayVal($config, 'timer.time.advance', 6, true);
-        $initTimerTime = time() - $timerAdvanceTime;
-        self::$_syServer->set(self::$_serverToken, [
-            'memory_usage' => memory_get_usage(),
-            'timer_time' => $initTimerTime,
-            'request_times' => 0,
-            'request_handling' => 0,
-            'host_local' => $this->_host,
-            'storepath_image' => $config['dir']['store']['image'],
-            'storepath_music' => $config['dir']['store']['music'],
-            'storepath_resources' => $config['dir']['store']['resources'],
-            'storepath_cache' => $config['dir']['store']['cache'],
-            'token_etime' => time() + 7200,
-            'unique_num' => 100000000,
-        ]);
-
-        //设置唯一ID自增基数
-        $num = (int)CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
-        if($num < 100000000){
-            $randomNum = random_int(100000000, 150000000);
-            if(!CacheSimpleFactory::getRedisInstance()->set(Project::DATA_KEY_CACHE_UNIQUE_ID, $randomNum)){
-                throw new ServerException('设置唯一ID自增基数出错', ErrorCode::SWOOLE_SERVER_PARAM_ERROR);
-            };
-        } else if($num > 500000000){
-            $reduceNum = $num - 100000000 - ($num % 100000000);
-            CacheSimpleFactory::getRedisInstance()->decrBy(Project::DATA_KEY_CACHE_UNIQUE_ID, $reduceNum);
+        if($workerId == 0){ //保证每一个服务只执行一次定时任务
+            $modules = Tool::getConfig('project.' . SY_ENV . SY_PROJECT . '.modules');
+            foreach (Project::$totalModuleBase as $eModuleName) {
+                $moduleData = Tool::getArrayVal($modules, $eModuleName, []);
+                if (!empty($moduleData)) {
+                    self::$_syServices->set($eModuleName, [
+                        'module' => $eModuleName,
+                        'host' => $moduleData['host'],
+                        'port' => (string)$moduleData['port'],
+                        'type' => $moduleData['type'],
+                    ]);
+                }
+            }
         }
     }
 
@@ -660,11 +660,11 @@ abstract class BaseServer {
     }
 
     /**
-     * 启动工作进程
+     * 启动主进程服务
      * @param \swoole_server $server
-     * @param int $workerId 进程编号
+     * @throws \Exception\Swoole\ServerException
      */
-    abstract public function onWorkerStart(\swoole_server $server, $workerId);
+    abstract public function onStart(\swoole_server $server);
     /**
      * 退出工作进程
      * @param \swoole_server $server
