@@ -31,12 +31,16 @@ class IndexController extends CommonController {
     }
 
     public function addShopAction(){
-        $addRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', []);
+        $addRes = \Dao\TestDao::addShop([]);
         $this->sendRsp($addRes);
     }
 
     public function getShopListAction(){
-        $getRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', $_GET);
+        $needParams = [
+            'page' => (int)\Request\SyRequest::getParams('page', 1),
+            'limit' => (int)\Request\SyRequest::getParams('limit', 10),
+        ];
+        $getRes = \Dao\TestDao::getShopList($needParams);
         $this->sendRsp($getRes);
     }
 }
