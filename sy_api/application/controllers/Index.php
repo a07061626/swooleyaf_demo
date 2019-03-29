@@ -37,7 +37,7 @@ class IndexController extends CommonController {
      * @SyFilter-{"field": "_ignoresign","explain": "签名标识","type": "string","rules": {"min": 0}}
      */
     public function getShopListAction(){
-        $getRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/addShop', $_GET);
+        $getRes = \SyModule\SyModuleContent::getInstance()->sendApiReq('/Index/Index/getShopList', $_GET);
         $this->sendRsp($getRes);
     }
 }
