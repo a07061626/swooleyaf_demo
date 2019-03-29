@@ -28,7 +28,7 @@ abstract class BaseController extends Controller_Abstract {
 
     public function init(){
         $this->SyResult = new Result();
-//        $this->user = SyUser::getUserInfo(true);
+        $this->user = SyUser::getUserInfo(true);
     }
 
     /**

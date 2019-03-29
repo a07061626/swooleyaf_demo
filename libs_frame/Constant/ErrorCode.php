@@ -53,6 +53,15 @@ class ErrorCode {
     const SIGN_TIME_ERROR = 103001;
     const SIGN_NONCE_ERROR = 103002;
 
+    //MONGO错误,取值范围:103100-103199
+    const MONGO_CONNECTION_ERROR = 103100;
+    const MONGO_PARAM_ERROR = 103101;
+    const MONGO_CREATE_ERROR = 103102;
+    const MONGO_INSERT_ERROR = 103103;
+    const MONGO_DELETE_ERROR = 103104;
+    const MONGO_UPDATE_ERROR = 103105;
+    const MONGO_SELECT_ERROR = 103106;
+
     //Twig错误,取值范围:103600-103699
     const TWIG_PARAM_ERROR = 103600;
 
@@ -86,6 +95,13 @@ class ErrorCode {
         self::SIGN_TIME_ERROR => '签名时间错误',
         self::SIGN_NONCE_ERROR => '签名随机字符串错误',
         self::TWIG_PARAM_ERROR => 'Twig参数错误',
+        self::MONGO_CONNECTION_ERROR => 'Mongo连接异常',
+        self::MONGO_PARAM_ERROR => 'Mongo参数错误',
+        self::MONGO_CREATE_ERROR => 'Mongo创建数据库出错',
+        self::MONGO_INSERT_ERROR => 'Mongo添加数据出错',
+        self::MONGO_DELETE_ERROR => 'Mongo删除数据出错',
+        self::MONGO_UPDATE_ERROR => 'Mongo修改数据出错',
+        self::MONGO_SELECT_ERROR => 'Mongo查询数据出错',
     ];
 
     /**
