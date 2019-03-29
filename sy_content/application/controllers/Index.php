@@ -32,7 +32,8 @@ class IndexController extends CommonController {
 
     public function addShopAction(){
         $addRes = \Dao\TestDao::addShop([]);
-        $this->sendRsp($addRes);
+        $this->SyResult->setData($addRes);
+        $this->sendRsp();
     }
 
     public function getShopListAction(){
@@ -41,6 +42,7 @@ class IndexController extends CommonController {
             'limit' => (int)\Request\SyRequest::getParams('limit', 10),
         ];
         $getRes = \Dao\TestDao::getShopList($needParams);
-        $this->sendRsp($getRes);
+        $this->SyResult->setData($getRes);
+        $this->sendRsp();
     }
 }
