@@ -7,9 +7,11 @@
  */
 namespace Tool;
 
+use Constant\ErrorCode;
 use Constant\Project;
 use Constant\Server;
 use DesignPatterns\Factories\CacheSimpleFactory;
+use Exception\Common\CheckException;
 use Traits\SimpleTrait;
 
 class Tool {
@@ -277,5 +279,31 @@ class Tool {
     public static function createUniqueId() : string {
         $num = CacheSimpleFactory::getRedisInstance()->incr(Project::DATA_KEY_CACHE_UNIQUE_ID);
         return date('YmdHis') . substr($num, -8);
+    }
+
+    /**
+     * 发送curl请求
+     * @param array $configs 配置数组
+     * @return array
+     * @throws \Exception\Common\CheckException
+     */
+    public static function sendCurlReq(array $configs) {
+        if (isset($configs[CURLOPT_URL]) && is_string($configs[CURLOPT_URL])) {
+            $ch = curl_init();
+            foreach ($configs as $configKey => $configVal) {
+                curl_setopt($ch, $configKey, $configVal);
+            }
+            $resContent = curl_exec($ch);
+            $resNo = curl_errno($ch);
+            $resMsg = curl_error($ch);
+            curl_close($ch);
+            return [
+                'res_no' => $resNo,
+                'res_msg' => $resMsg,
+                'res_content' => $resContent,
+            ];
+        } else {
+            throw new CheckException('请求地址不能为空', ErrorCode::COMMON_PARAM_ERROR);
+        }
     }
 }

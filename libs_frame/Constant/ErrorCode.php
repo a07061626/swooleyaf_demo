@@ -48,6 +48,11 @@ class ErrorCode {
     const REFLECT_RESOURCE_NOT_EXIST = 101000;
     const REFLECT_ANNOTATION_DATA_ERROR = 101001;
 
+    //短信错误,取值范围:102000-102199
+    const SMS_PARAM_ERROR = 102000;
+    const SMS_POST_ERROR = 102001;
+    const SMS_GET_ERROR = 102002;
+
     //签名错误,取值范围:103000-103099
     const SIGN_ERROR = 103000;
     const SIGN_TIME_ERROR = 103001;
@@ -91,6 +96,9 @@ class ErrorCode {
         self::REDIS_AUTH_ERROR => 'REDIS鉴权失败',
         self::REFLECT_RESOURCE_NOT_EXIST => '反射资源不存在',
         self::REFLECT_ANNOTATION_DATA_ERROR => '注解数据不正确',
+        self::SMS_PARAM_ERROR => '短信参数错误',
+        self::SMS_POST_ERROR => '短信发送POST请求出错',
+        self::SMS_GET_ERROR => '短信发送GET请求出错',
         self::SIGN_ERROR => '签名值错误',
         self::SIGN_TIME_ERROR => '签名时间错误',
         self::SIGN_NONCE_ERROR => '签名随机字符串错误',
